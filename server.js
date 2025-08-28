@@ -12,20 +12,20 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 const THAI_FOOD_DICTIONARY_API_URL =
-  "http://localhost:1313/api/thai-food-dictionary.json";
+  "https://www.ahaan-thai.de/api/thai-food-dictionary.json";
 
-// Debug logging function
-function debug(message, ...args) {
+// Debug logging functions
+function logDebug(message, ...args) {
   const timestamp = new Date().toISOString();
   console.error(`[${timestamp}] [DEBUG] ${message}`, ...args);
 }
 
-function error(message, ...args) {
+function logError(message, ...args) {
   const timestamp = new Date().toISOString();
   console.error(`[${timestamp}] [ERROR] ${message}`, ...args);
 }
 
-function info(message, ...args) {
+function logInfo(message, ...args) {
   const timestamp = new Date().toISOString();
   console.error(`[${timestamp}] [INFO] ${message}`, ...args);
 }
@@ -37,17 +37,18 @@ let thaiFoodData = null;
 async function fetchThaiFoodData() {
   if (!thaiFoodData) {
     try {
-      debug(
-        `Fetching Thai Food Dictionary data from API: ${THAI_FOOD_DICTIONARY_API_URL}`
-      );
+      logDebug("Fetching Thai Food Dictionary data from API...");
       // Use dynamic import for fetch in Node.js
       const fetch = (await import("node-fetch")).default;
-      debug("Node-fetch imported successfully");
+      logDebug("Node-fetch imported successfully");
 
       const response = await fetch(THAI_FOOD_DICTIONARY_API_URL);
-      debug(`API response status: ${response.status} ${response.statusText}`);
+      logDebug(
+        `API response status: ${response.status} ${response.statusText}`
+      );
 
       if (!response.ok) {
+        logError(`HTTP ${response.status}: ${response.statusText}`);
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
@@ -58,30 +59,31 @@ async function fetchThaiFoodData() {
         0
       );
 
-      info(`Thai Food Dictionary loaded successfully:`);
-      info(`- Categories: ${categories.length}`);
-      info(`- Total items: ${totalItems}`);
-      debug("Categories:", categories);
-    } catch (error) {
-      error("Failed to fetch Thai Food Dictionary data:", error.message);
-      error("Stack trace:", error.stack);
+      logInfo(`Thai Food Dictionary loaded successfully:`);
+      logInfo(`- Categories: ${categories.length}`);
+      logInfo(`- Total items: ${totalItems}`);
+      logDebug("Categories:", categories);
+    } catch (err) {
+      // Changed from 'error' to 'err'
+      logError("Failed to fetch Thai Food Dictionary data:", err.message);
+      logError("Stack trace:", err.stack);
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to fetch Thai Food Dictionary data: ${error.message}`
+        `Failed to fetch Thai Food Dictionary data: ${err.message}`
       );
     }
   } else {
-    debug("Using cached Thai Food Dictionary data");
+    logDebug("Using cached Thai Food Dictionary data");
   }
   return thaiFoodData;
 }
 
 // Helper function to search in categories
 function searchInCategory(data, category, searchTerm) {
-  debug(`Searching in category "${category}" for term "${searchTerm}"`);
+  logDebug(`Searching in category "${category}" for term "${searchTerm}"`);
 
   if (!data[category]) {
-    debug(`Category "${category}" not found in data`);
+    logDebug(`Category "${category}" not found in data`);
     return [];
   }
 
@@ -89,7 +91,7 @@ function searchInCategory(data, category, searchTerm) {
   const lowerSearchTerm = searchTerm.toLowerCase();
   const categoryItems = Object.keys(data[category]).length;
 
-  debug(`Category "${category}" has ${categoryItems} items`);
+  logDebug(`Category "${category}" has ${categoryItems} items`);
 
   for (const [thai, details] of Object.entries(data[category])) {
     const matches = [
@@ -106,16 +108,16 @@ function searchInCategory(data, category, searchTerm) {
         thai,
         ...details,
       });
-      debug(`Match found: ${thai} (${details.meaning_de})`);
+      logDebug(`Match found: ${thai} (${details.meaning_de})`);
     }
   }
 
-  debug(`Found ${results.length} results in category "${category}"`);
+  logDebug(`Found ${results.length} results in category "${category}"`);
   return results;
 }
 
 // Create server
-debug("Creating MCP Server instance...");
+logDebug("Creating MCP Server instance...");
 const server = new Server(
   {
     name: "thai-food-dictionary-server",
@@ -128,11 +130,11 @@ const server = new Server(
     },
   }
 );
-info("MCP Server instance created successfully");
+logInfo("MCP Server instance created successfully");
 
 // List available tools
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  debug("Handling ListTools request");
+  logDebug("Handling ListTools request");
   const tools = [
     {
       name: "search_thai_food",
@@ -229,13 +231,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     },
   ];
 
-  debug(`Returning ${tools.length} available tools`);
+  logDebug(`Returning ${tools.length} available tools`);
   return { tools };
 });
 
 // List available resources
 server.setRequestHandler(ListResourcesRequestSchema, async () => {
-  debug("Handling ListResources request");
+  logDebug("Handling ListResources request");
   const resources = [
     {
       uri: "thai-food://dictionary/full",
@@ -252,21 +254,21 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
     },
   ];
 
-  debug(`Returning ${resources.length} available resources`);
+  logDebug(`Returning ${resources.length} available resources`);
   return { resources };
 });
 
 // Read resources
 server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   const { uri } = request.params;
-  debug(`Handling ReadResource request for URI: ${uri}`);
+  logDebug(`Handling ReadResource request for URI: ${uri}`);
 
   try {
     const data = await fetchThaiFoodData();
 
     switch (uri) {
       case "thai-food://dictionary/full":
-        debug("Returning full dictionary data");
+        logDebug("Returning full dictionary data");
         return {
           contents: [
             {
@@ -278,14 +280,14 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
         };
 
       case "thai-food://categories/list":
-        debug("Generating categories list");
+        logDebug("Generating categories list");
         const categories = Object.keys(data).map((key) => ({
           key,
           name: key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
           count: Object.keys(data[key]).length,
         }));
 
-        debug(`Generated list of ${categories.length} categories`);
+        logDebug(`Generated list of ${categories.length} categories`);
         return {
           contents: [
             {
@@ -297,14 +299,15 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
         };
 
       default:
-        error(`Unknown resource requested: ${uri}`);
+        logError(`Unknown resource requested: ${uri}`);
         throw new McpError(
           ErrorCode.InvalidRequest,
           `Unknown resource: ${uri}`
         );
     }
   } catch (err) {
-    error(`Error handling ReadResource for ${uri}:`, err.message);
+    // Changed from 'error' to 'err'
+    logError(`Error handling ReadResource for ${uri}:`, err.message);
     throw err;
   }
 });
@@ -312,7 +315,7 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 // Handle tool calls
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
-  debug(`Handling tool call: ${name}`, args);
+  logDebug(`Handling tool call: ${name}`, args);
 
   try {
     const data = await fetchThaiFoodData();
@@ -320,7 +323,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (name) {
       case "search_thai_food": {
         const { query, category } = args;
-        debug(
+        logDebug(
           `Search request - Query: "${query}", Category: ${category || "all"}`
         );
         let results = [];
@@ -331,13 +334,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         } else {
           // Search in all categories
           const categories = Object.keys(data);
-          debug(`Searching across ${categories.length} categories`);
+          logDebug(`Searching across ${categories.length} categories`);
           for (const cat of categories) {
             results.push(...searchInCategory(data, cat, query));
           }
         }
 
-        info(`Search completed: ${results.length} results for "${query}"`);
+        logInfo(`Search completed: ${results.length} results for "${query}"`);
         return {
           content: [
             {
@@ -364,10 +367,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "get_category": {
         const { category } = args;
-        debug(`Get category request: ${category}`);
+        logDebug(`Get category request: ${category}`);
 
         if (!data[category]) {
-          error(`Category "${category}" not found`);
+          logError(`Category "${category}" not found`);
           throw new McpError(
             ErrorCode.InvalidRequest,
             `Category "${category}" not found`
@@ -379,7 +382,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           ...details,
         }));
 
-        info(`Category "${category}" retrieved: ${items.length} items`);
+        logInfo(`Category "${category}" retrieved: ${items.length} items`);
         return {
           content: [
             {
@@ -399,7 +402,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "get_categories": {
-        debug("Get categories request");
+        logDebug("Get categories request");
         const categories = Object.keys(data).map((key) => {
           const count = Object.keys(data[key]).length;
           const displayName = key
@@ -408,7 +411,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           return `• ${displayName} (${count} items)`;
         });
 
-        info(`Categories list generated: ${categories.length} categories`);
+        logInfo(`Categories list generated: ${categories.length} categories`);
         return {
           content: [
             {
@@ -423,7 +426,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "translate_thai_word": {
         const { thai_word } = args;
-        debug(`Translate request for: "${thai_word}"`);
+        logDebug(`Translate request for: "${thai_word}"`);
         let found = null;
         let foundCategory = null;
 
@@ -432,13 +435,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           if (items[thai_word]) {
             found = items[thai_word];
             foundCategory = category;
-            debug(`Found exact match in category: ${category}`);
+            logDebug(`Found exact match in category: ${category}`);
             break;
           }
         }
 
         if (!found) {
-          debug(`No exact match found for: "${thai_word}"`);
+          logDebug(`No exact match found for: "${thai_word}"`);
           return {
             content: [
               {
@@ -449,7 +452,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           };
         }
 
-        info(
+        logInfo(
           `Translation found for "${thai_word}" in category "${foundCategory}"`
         );
         return {
@@ -470,12 +473,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       default:
-        error(`Unknown tool requested: ${name}`);
+        logError(`Unknown tool requested: ${name}`);
         throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
     }
   } catch (err) {
-    error(`Error handling tool call "${name}":`, err.message);
-    error("Stack trace:", err.stack);
+    // Changed from 'error' to 'err'
+    logError(`Error handling tool call "${name}":`, err.message);
+    logError("Stack trace:", err.stack);
     throw err;
   }
 });
@@ -483,57 +487,61 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 // Start server
 async function main() {
   try {
-    info("Starting Thai Food Dictionary MCP Server...");
-    debug("Node.js version:", process.version);
-    debug("Current working directory:", process.cwd());
-    debug("Command line arguments:", process.argv);
+    logInfo("Starting Thai Food Dictionary MCP Server...");
+    logDebug("Node.js version:", process.version);
+    logDebug("Current working directory:", process.cwd());
+    logDebug("Command line arguments:", process.argv);
 
     const transport = new StdioServerTransport();
-    debug("StdioServerTransport created");
+    logDebug("StdioServerTransport created");
 
     await server.connect(transport);
-    info("Thai Food Dictionary MCP server connected and running on stdio");
+    logInfo("Thai Food Dictionary MCP server connected and running on stdio");
 
     // Try to preload the data
     try {
       await fetchThaiFoodData();
-      info("Thai Food Dictionary data preloaded successfully");
+      logInfo("Thai Food Dictionary data preloaded successfully");
     } catch (err) {
-      error("Failed to preload Thai Food Dictionary data:", err.message);
-      info("Data will be loaded on first request");
+      // Changed from 'error' to 'err'
+      logError("Failed to preload Thai Food Dictionary data:", err.message);
+      logInfo("Data will be loaded on first request");
     }
   } catch (err) {
-    error("Failed to start MCP server:", err.message);
-    error("Stack trace:", err.stack);
+    // Changed from 'error' to 'err'
+    logError("Failed to start MCP server:", err.message);
+    logError("Stack trace:", err.stack);
     process.exit(1);
   }
 }
 
 // Handle process termination
 process.on("SIGINT", () => {
-  info("Received SIGINT, shutting down gracefully...");
+  logInfo("Received SIGINT, shutting down gracefully...");
   process.exit(0);
 });
 
 process.on("SIGTERM", () => {
-  info("Received SIGTERM, shutting down gracefully...");
+  logInfo("Received SIGTERM, shutting down gracefully...");
   process.exit(0);
 });
 
 process.on("uncaughtException", (err) => {
-  error("Uncaught exception:", err.message);
-  error("Stack trace:", err.stack);
+  // Changed from 'error' to 'err'
+  logError("Uncaught exception:", err.message);
+  logError("Stack trace:", err.stack);
   process.exit(1);
 });
 
 process.on("unhandledRejection", (reason, promise) => {
-  error("Unhandled rejection at:", promise, "reason:", reason);
+  logError("Unhandled rejection at:", promise, "reason:", reason);
   process.exit(1);
 });
 
-debug("Calling main function...");
+logDebug("Calling main function...");
 main().catch((err) => {
-  error("Fatal error in main():", err.message);
-  error("Stack trace:", err.stack);
+  // Changed from 'error' to 'err'
+  logError("Fatal error in main():", err.message);
+  logError("Stack trace:", err.stack);
   process.exit(1);
 });
