@@ -53,9 +53,7 @@ For MacOs this file is located at `~/Library/Application Support/Claude/config.j
   "mcpServers": {
     "thai-food-dictionary": {
       "command": "bash",
-      "args": [
-        "<PATH TO MCP SERVER>/ahaan-thai-mcp-server/run-dictionary-server.sh"
-      ]
+      "args": ["<PATH TO MCP SERVER>/run-dictionary-server.sh"]
     }
   }
 }
