@@ -1,6 +1,20 @@
 # Ahaan mcp-server
 
-A MCP Server for the ahaan-thai.de APIs
+A collection of MCP Servers for the ahaan-thai.de APIs
+
+Currently we have the following servers:
+
+## Dictionary Server
+
+A MCP Server for the thai food dictionary. It provides translations of many food related terms in thai, english and german.
+
+- thai-food-dictionary-server (dictionary-server.js)
+
+## Library Server
+
+A MCP Server for the thai cook book library with more than 500 dishes from different cook books
+
+- thai-cook-book-library-server (library-server.js)
 
 ## Prerequisites
 
@@ -23,20 +37,31 @@ So we need to make the script executable:
 
 ```bash
 chmod +x run-dictionary-server.sh
+chmod +x run-library-server.sh
 ```
 
-1. Start the server
+1. Start the servers
 
 ```bash
 ./run-dictionary-server.sh
 ```
 
-1. Inspect the server
-
-to inspect the server we use the inspector from `modelcontextprotocol`
+or
 
 ```bash
-npm run inspect
+./run-library-server.sh
+```
+
+1. Inspect the servers
+
+to inspect the servers we use the inspector from `modelcontextprotocol`
+
+```bash
+npm run inspect:dictionary
+```
+
+```bash
+npm run inspect:library
 ```
 
 ## Usage

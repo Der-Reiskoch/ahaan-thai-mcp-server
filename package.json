@@ -10,7 +10,10 @@
   "scripts": {
     "start:dictionary": "node dictionary-server.js",
     "dev:dictionary": "node --inspect dictionary-server.js",
-    "inspect:dictionary": "npx @modelcontextprotocol/inspector bash ./run-dictionary-server.sh"
+    "start:library": "node library-server.js",
+    "dev:library": "node --inspect library-server.js",
+    "inspect:dictionary": "npx @modelcontextprotocol/inspector bash ./run-dictionary-server.sh",
+    "inspect:library": "npx @modelcontextprotocol/inspector bash ./run-library-server.sh"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.5.0",
@@ -21,7 +24,8 @@
     "thai-food",
     "dictionary",
     "translation",
-    "cooking"
+    "cooking",
+    "cookbooks"
   ],
   "author": "Der Reiskoch",
   "license": "MIT",
