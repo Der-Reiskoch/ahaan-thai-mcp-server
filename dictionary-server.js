@@ -243,8 +243,7 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
       uri: "thai-food://dictionary/full",
       mimeType: "application/json",
       name: "Complete Thai Food Dictionary",
-      description:
-        "The complete Thai food dictionary data from der-reiskoch.de",
+      description: "The complete Thai food dictionary data from ahaan-thai.de",
     },
     {
       uri: "thai-food://categories/list",
