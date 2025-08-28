@@ -2,15 +2,17 @@
 
 A collection of MCP Servers for the ahaan-thai.de APIs
 
-Currently we have the following servers:
+## MCP Servers
 
-## Dictionary Server
+Currently we have two servers for the APIs provided by ahaan-thai.de
+
+### Dictionary Server
 
 A MCP Server for the thai food dictionary. It provides translations of many food related terms in thai, english and german.
 
 - thai-food-dictionary-server (dictionary-server.js)
 
-## Library Server
+### Library Server
 
 A MCP Server for the thai cook book library with more than 500 dishes from different cook books
 
