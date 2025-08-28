@@ -1,16 +1,16 @@
 {
   "name": "ahaan-thai-mcp-server",
   "version": "1.0.0",
-  "description": "MCP Server for Thai Food Dictionary API from der-reiskoch.de",
+  "description": "MCP Server for APIs by ahaan-thai.de",
   "type": "module",
-  "main": "server.js",
+  "main": "dictionary-server.js",
   "bin": {
-    "thai-food-dictionary-server": "./server.js"
+    "ahaan-thai-mcp-server": "./dictionary-server.js"
   },
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --inspect server.js",
-    "inspect": "npx @modelcontextprotocol/inspector bash ./run-server.sh"
+    "start:dictionary": "node dictionary-server.js",
+    "dev:dictionary": "node --inspect dictionary-server.js",
+    "inspect:dictionary": "npx @modelcontextprotocol/inspector bash ./run-dictionary-server.sh"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.5.0",
@@ -23,7 +23,7 @@
     "translation",
     "cooking"
   ],
-  "author": "Your Name",
+  "author": "Der Reiskoch",
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0"
