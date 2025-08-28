@@ -1,4 +1,4 @@
-# Ahaan mcp-server
+# Ahaan Thai MCP servers
 
 A collection of MCP Servers for the ahaan-thai.de APIs
 
