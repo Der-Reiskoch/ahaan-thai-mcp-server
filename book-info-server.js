@@ -43,12 +43,40 @@ class ThaiBookInfoServer {
     );
 
     this.apiUrl = "https://www.ahaan-thai.de/api/thai-cook-book-info.json";
+    this.amazonUrlPrefix = "https://amzn.to/"; // Amazon URL prefix constant
     this.booksCache = null;
     this.cacheTimestamp = null;
     this.cacheExpiry = 5 * 60 * 1000; // 5 minutes in milliseconds
 
     logInfo("Initializing Thai Book Info Server");
     this.setupHandlers();
+  }
+
+  /**
+   * Process book data to handle Amazon URLs
+   * @param {Object} book - Book object from API
+   * @returns {Object} - Processed book object
+   */
+  processBookData(book) {
+    logDebug(`Processing book data for: "${book.title}"`);
+    
+    const processedBook = { ...book };
+    
+    // Handle Amazon URL transformation
+    if (book.shop === "amazon" && book.target && book.target.trim() !== "") {
+      logDebug(`Converting Amazon target "${book.target}" to full URL`);
+      processedBook.url = this.amazonUrlPrefix + book.target;
+      
+      // Remove the original target field since we converted it to url
+      delete processedBook.target;
+      
+      logDebug(`Amazon URL created: ${processedBook.url}`);
+    } else if (book.target) {
+      // Keep target field for non-Amazon shops
+      logDebug(`Keeping target field for non-Amazon shop: ${book.shop}`);
+    }
+    
+    return processedBook;
   }
 
   setupHandlers() {
@@ -75,8 +103,7 @@ class ThaiBookInfoServer {
               properties: {
                 query: {
                   type: "string",
-                  description:
-                    "Search term (searches in author, title, description)",
+                  description: "Search term (searches in author, title, description)",
                 },
                 language: {
                   type: "string",
@@ -200,44 +227,45 @@ class ThaiBookInfoServer {
 
   async fetchBooks() {
     logDebug("Checking book cache");
-
+    
     // Check if we have valid cached data
-    if (
-      this.booksCache &&
-      this.cacheTimestamp &&
-      Date.now() - this.cacheTimestamp < this.cacheExpiry
-    ) {
+    if (this.booksCache && this.cacheTimestamp && 
+        (Date.now() - this.cacheTimestamp < this.cacheExpiry)) {
       logDebug("Using cached book data");
       return this.booksCache;
     }
 
     logInfo("Fetching fresh book data from API");
-
+    
     try {
       const response = await fetch(this.apiUrl);
-
+      
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const books = await response.json();
-      logInfo(`Successfully fetched ${books.length} books from API`);
-
+      const rawBooks = await response.json();
+      logInfo(`Successfully fetched ${rawBooks.length} books from API`);
+      
+      // Process books to handle Amazon URLs and other transformations
+      const books = rawBooks.map(book => this.processBookData(book));
+      logDebug("Book data processing completed");
+      
       // Update cache
       this.booksCache = books;
       this.cacheTimestamp = Date.now();
       logDebug("Book data cached successfully");
-
+      
       return books;
     } catch (error) {
       logError("Failed to fetch book data:", error.message);
-
+      
       // Return cached data if available, even if expired
       if (this.booksCache) {
         logInfo("Returning expired cached data due to fetch failure");
         return this.booksCache;
       }
-
+      
       throw new Error(`Failed to fetch book data: ${error.message}`);
     }
   }
@@ -245,20 +273,30 @@ class ThaiBookInfoServer {
   async listBooks() {
     logDebug("Listing all books");
     const books = await this.fetchBooks();
+    
+    const bookList = books.map((book) => {
+      const bookData = {
+        title: book.title,
+        author: book.author,
+        year: book.year,
+        language: book.lang,
+        isbn: book.isbn,
+        level: book.level,
+        publisher: book.publisher,
+        description: book.description || "No description available"
+      };
 
-    const bookList = books.map((book) => ({
-      title: book.title,
-      author: book.author,
-      year: book.year,
-      language: book.lang,
-      isbn: book.isbn,
-      level: book.level,
-      publisher: book.publisher,
-      description: book.description || "No description available",
-    }));
+      // Add URL if it exists (converted from Amazon target)
+      if (book.url) {
+        bookData.url = book.url;
+        logDebug(`Including Amazon URL for "${book.title}": ${book.url}`);
+      }
+
+      return bookData;
+    });
 
     logInfo(`Returning list of ${bookList.length} books`);
-
+    
     return {
       content: [
         {
@@ -278,14 +316,12 @@ class ThaiBookInfoServer {
     if (args.query) {
       const query = args.query.toLowerCase();
       logDebug(`Filtering by query: "${query}"`);
-
-      filteredBooks = filteredBooks.filter(
-        (book) =>
-          (book.title && book.title.toLowerCase().includes(query)) ||
-          (book.author && book.author.toLowerCase().includes(query)) ||
-          (book.description &&
-            book.description.toLowerCase().includes(query)) ||
-          (book.text && book.text.toLowerCase().includes(query))
+      
+      filteredBooks = filteredBooks.filter(book => 
+        (book.title && book.title.toLowerCase().includes(query)) ||
+        (book.author && book.author.toLowerCase().includes(query)) ||
+        (book.description && book.description.toLowerCase().includes(query)) ||
+        (book.text && book.text.toLowerCase().includes(query))
       );
       logDebug(`After query filter: ${filteredBooks.length} books`);
     }
@@ -293,18 +329,14 @@ class ThaiBookInfoServer {
     // Language filter
     if (args.language) {
       logDebug(`Filtering by language: ${args.language}`);
-      filteredBooks = filteredBooks.filter(
-        (book) => book.lang === args.language
-      );
+      filteredBooks = filteredBooks.filter(book => book.lang === args.language);
       logDebug(`After language filter: ${filteredBooks.length} books`);
     }
 
     // Level filter
     if (args.level) {
       logDebug(`Filtering by level: ${args.level}`);
-      filteredBooks = filteredBooks.filter(
-        (book) => book.level?.toString() === args.level
-      );
+      filteredBooks = filteredBooks.filter(book => book.level?.toString() === args.level);
       logDebug(`After level filter: ${filteredBooks.length} books`);
     }
 
@@ -312,8 +344,8 @@ class ThaiBookInfoServer {
     if (args.author) {
       const author = args.author.toLowerCase();
       logDebug(`Filtering by author: "${author}"`);
-      filteredBooks = filteredBooks.filter(
-        (book) => book.author && book.author.toLowerCase().includes(author)
+      filteredBooks = filteredBooks.filter(book => 
+        book.author && book.author.toLowerCase().includes(author)
       );
       logDebug(`After author filter: ${filteredBooks.length} books`);
     }
@@ -321,8 +353,8 @@ class ThaiBookInfoServer {
     // Year filter
     if (args.year) {
       logDebug(`Filtering by year: ${args.year}`);
-      filteredBooks = filteredBooks.filter(
-        (book) => book.year?.toString() === args.year
+      filteredBooks = filteredBooks.filter(book => 
+        book.year?.toString() === args.year
       );
       logDebug(`After year filter: ${filteredBooks.length} books`);
     }
@@ -331,25 +363,34 @@ class ThaiBookInfoServer {
     if (args.publisher) {
       const publisher = args.publisher.toLowerCase();
       logDebug(`Filtering by publisher: "${publisher}"`);
-      filteredBooks = filteredBooks.filter(
-        (book) =>
-          book.publisher && book.publisher.toLowerCase().includes(publisher)
+      filteredBooks = filteredBooks.filter(book => 
+        book.publisher && book.publisher.toLowerCase().includes(publisher)
       );
       logDebug(`After publisher filter: ${filteredBooks.length} books`);
     }
 
-    const result = filteredBooks.map((book) => ({
-      title: book.title,
-      author: book.author,
-      year: book.year,
-      language: book.lang,
-      isbn: book.isbn,
-      level: book.level,
-      publisher: book.publisher,
-      description: book.description || "No description available",
-      location: book.location,
-      image: book.image,
-    }));
+    const result = filteredBooks.map((book) => {
+      const bookData = {
+        title: book.title,
+        author: book.author,
+        year: book.year,
+        language: book.lang,
+        isbn: book.isbn,
+        level: book.level,
+        publisher: book.publisher,
+        description: book.description || "No description available",
+        location: book.location,
+        image: book.image
+      };
+
+      // Add URL if it exists (converted from Amazon target)
+      if (book.url) {
+        bookData.url = book.url;
+        logDebug(`Including Amazon URL for "${book.title}": ${book.url}`);
+      }
+
+      return bookData;
+    });
 
     logInfo(`Search completed. Found ${result.length} matching books`);
 
@@ -366,15 +407,20 @@ class ThaiBookInfoServer {
   async getBookByIsbn(isbn) {
     logDebug(`Getting book by ISBN: ${isbn}`);
     const books = await this.fetchBooks();
-
-    const book = books.find((b) => b.isbn === isbn);
-
+    
+    const book = books.find(b => b.isbn === isbn);
+    
     if (!book) {
       logInfo(`No book found with ISBN: ${isbn}`);
       throw new Error(`No book found with ISBN: ${isbn}`);
     }
 
     logInfo(`Found book: "${book.title}" by ${book.author}`);
+
+    // Log Amazon URL if present
+    if (book.url) {
+      logDebug(`Book has Amazon URL: ${book.url}`);
+    }
 
     return {
       content: [
@@ -389,11 +435,9 @@ class ThaiBookInfoServer {
   async getBooksByAuthor(authorName) {
     logDebug(`Getting books by author: ${authorName}`);
     const books = await this.fetchBooks();
-
-    const authorBooks = books.filter(
-      (book) =>
-        book.author &&
-        book.author.toLowerCase().includes(authorName.toLowerCase())
+    
+    const authorBooks = books.filter(book => 
+      book.author && book.author.toLowerCase().includes(authorName.toLowerCase())
     );
 
     if (authorBooks.length === 0) {
@@ -416,8 +460,8 @@ class ThaiBookInfoServer {
   async getBooksByLanguage(language) {
     logDebug(`Getting books by language: ${language}`);
     const books = await this.fetchBooks();
-
-    const languageBooks = books.filter((book) => book.lang === language);
+    
+    const languageBooks = books.filter(book => book.lang === language);
 
     if (languageBooks.length === 0) {
       logInfo(`No books found for language: ${language}`);
@@ -447,58 +491,56 @@ class ThaiBookInfoServer {
       authors: {},
       publishers: {},
       years: {},
-      locations: {},
+      locations: {}
     };
 
     // Count by language
-    books.forEach((book) => {
+    books.forEach(book => {
       if (book.lang) {
         stats.languages[book.lang] = (stats.languages[book.lang] || 0) + 1;
       }
     });
 
     // Count by level
-    books.forEach((book) => {
+    books.forEach(book => {
       if (book.level) {
         stats.levels[book.level] = (stats.levels[book.level] || 0) + 1;
       }
     });
 
     // Count by author
-    books.forEach((book) => {
+    books.forEach(book => {
       if (book.author) {
         stats.authors[book.author] = (stats.authors[book.author] || 0) + 1;
       }
     });
 
     // Count by publisher
-    books.forEach((book) => {
+    books.forEach(book => {
       if (book.publisher) {
-        stats.publishers[book.publisher] =
-          (stats.publishers[book.publisher] || 0) + 1;
+        stats.publishers[book.publisher] = (stats.publishers[book.publisher] || 0) + 1;
       }
     });
 
     // Count by year
-    books.forEach((book) => {
+    books.forEach(book => {
       if (book.year) {
         stats.years[book.year] = (stats.years[book.year] || 0) + 1;
       }
     });
 
     // Count by location
-    books.forEach((book) => {
+    books.forEach(book => {
       if (book.location) {
-        stats.locations[book.location] =
-          (stats.locations[book.location] || 0) + 1;
+        stats.locations[book.location] = (stats.locations[book.location] || 0) + 1;
       }
     });
 
     // Sort statistics by count (descending)
-    Object.keys(stats).forEach((key) => {
+    Object.keys(stats).forEach(key => {
       if (typeof stats[key] === "object" && stats[key] !== null) {
         stats[key] = Object.fromEntries(
-          Object.entries(stats[key]).sort(([, a], [, b]) => b - a)
+          Object.entries(stats[key]).sort(([,a], [,b]) => b - a)
         );
       }
     });
@@ -508,7 +550,7 @@ class ThaiBookInfoServer {
       total: stats.total_books,
       languages: Object.keys(stats.languages).length,
       authors: Object.keys(stats.authors).length,
-      publishers: Object.keys(stats.publishers).length,
+      publishers: Object.keys(stats.publishers).length
     });
 
     return {
@@ -524,7 +566,7 @@ class ThaiBookInfoServer {
   async run() {
     logInfo("Starting Thai Book Info Server");
     const transport = new StdioServerTransport();
-
+    
     try {
       await this.server.connect(transport);
       logInfo("Server connected and ready to handle requests");
