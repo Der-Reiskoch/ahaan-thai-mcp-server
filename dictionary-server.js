@@ -30,8 +30,9 @@ function logInfo(message, ...args) {
   console.error(`[${timestamp}] [INFO] ${message}`, ...args);
 }
 
-// Thai Food Dictionary Data
+// Thai Food Dictionary Data and Categories Cache
 let thaiFoodData = null;
+let availableCategories = [];
 
 // Fetch the Thai Food Dictionary data
 async function fetchThaiFoodData() {
@@ -53,18 +54,20 @@ async function fetchThaiFoodData() {
       }
 
       thaiFoodData = await response.json();
-      const categories = Object.keys(thaiFoodData);
-      const totalItems = categories.reduce(
+      
+      // Dynamically extract available categories
+      availableCategories = Object.keys(thaiFoodData);
+      
+      const totalItems = availableCategories.reduce(
         (sum, cat) => sum + Object.keys(thaiFoodData[cat]).length,
         0
       );
 
       logInfo(`Thai Food Dictionary loaded successfully:`);
-      logInfo(`- Categories: ${categories.length}`);
+      logInfo(`- Categories: ${availableCategories.length}`);
       logInfo(`- Total items: ${totalItems}`);
-      logDebug("Categories:", categories);
+      logDebug("Available categories:", availableCategories);
     } catch (err) {
-      // Changed from 'error' to 'err'
       logError("Failed to fetch Thai Food Dictionary data:", err.message);
       logError("Stack trace:", err.stack);
       throw new McpError(
@@ -76,6 +79,14 @@ async function fetchThaiFoodData() {
     logDebug("Using cached Thai Food Dictionary data");
   }
   return thaiFoodData;
+}
+
+// Helper function to get available categories
+async function getAvailableCategories() {
+  if (availableCategories.length === 0) {
+    await fetchThaiFoodData();
+  }
+  return availableCategories;
 }
 
 // Helper function to search in categories
@@ -132,9 +143,14 @@ const server = new Server(
 );
 logInfo("MCP Server instance created successfully");
 
-// List available tools
+// List available tools - now with dynamic categories
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   logDebug("Handling ListTools request");
+  
+  // Get available categories dynamically
+  const categories = await getAvailableCategories();
+  logDebug(`Building tools with ${categories.length} dynamic categories`);
+  
   const tools = [
     {
       name: "search_thai_food",
@@ -151,24 +167,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           category: {
             type: "string",
             description: "Optional: specific category to search in",
-            enum: [
-              "attribute",
-              "blattgemuese",
-              "farben",
-              "fisch_meeresfruechte",
-              "fleisch_wurst",
-              "fruechte_obst",
-              "gemuese",
-              "gewuerze_kraeuter",
-              "nudeln_reis",
-              "pilze_tofu_eier_nuesse",
-              "regionen_provinzen",
-              "salate",
-              "sossen_pasten_dips",
-              "suessspeisen",
-              "suppen_currys",
-              "zubereitung",
-            ],
+            enum: categories, // Dynamically populated
           },
         },
         required: ["query"],
@@ -184,24 +183,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           category: {
             type: "string",
             description: "Category name",
-            enum: [
-              "attribute",
-              "blattgemuese",
-              "farben",
-              "fisch_meeresfruechte",
-              "fleisch_wurst",
-              "fruechte_obst",
-              "gemuese",
-              "gewuerze_kraeuter",
-              "nudeln_reis",
-              "pilze_tofu_eier_nuesse",
-              "regionen_provinzen",
-              "salate",
-              "sossen_pasten_dips",
-              "suessspeisen",
-              "suppen_currys",
-              "zubereitung",
-            ],
+            enum: categories, // Dynamically populated
           },
         },
         required: ["category"],
@@ -231,7 +213,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     },
   ];
 
-  logDebug(`Returning ${tools.length} available tools`);
+  logDebug(`Returning ${tools.length} available tools with dynamic categories`);
   return { tools };
 });
 
@@ -305,7 +287,6 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
         );
     }
   } catch (err) {
-    // Changed from 'error' to 'err'
     logError(`Error handling ReadResource for ${uri}:`, err.message);
     throw err;
   }
@@ -325,6 +306,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         logDebug(
           `Search request - Query: "${query}", Category: ${category || "all"}`
         );
+        
+        // Validate category if provided
+        if (category && !availableCategories.includes(category)) {
+          logError(`Invalid category "${category}"`);
+          throw new McpError(
+            ErrorCode.InvalidRequest,
+            `Category "${category}" not found. Available categories: ${availableCategories.join(", ")}`
+          );
+        }
+        
         let results = [];
 
         if (category) {
@@ -332,9 +323,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           results = searchInCategory(data, category, query);
         } else {
           // Search in all categories
-          const categories = Object.keys(data);
-          logDebug(`Searching across ${categories.length} categories`);
-          for (const cat of categories) {
+          logDebug(`Searching across ${availableCategories.length} categories`);
+          for (const cat of availableCategories) {
             results.push(...searchInCategory(data, cat, query));
           }
         }
@@ -368,11 +358,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const { category } = args;
         logDebug(`Get category request: ${category}`);
 
-        if (!data[category]) {
+        // Validate category
+        if (!availableCategories.includes(category)) {
           logError(`Category "${category}" not found`);
           throw new McpError(
             ErrorCode.InvalidRequest,
-            `Category "${category}" not found`
+            `Category "${category}" not found. Available categories: ${availableCategories.join(", ")}`
           );
         }
 
@@ -402,7 +393,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "get_categories": {
         logDebug("Get categories request");
-        const categories = Object.keys(data).map((key) => {
+        const categories = availableCategories.map((key) => {
           const count = Object.keys(data[key]).length;
           const displayName = key
             .replace(/_/g, " ")
@@ -429,10 +420,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         let found = null;
         let foundCategory = null;
 
-        // Search for exact Thai word match
-        for (const [category, items] of Object.entries(data)) {
-          if (items[thai_word]) {
-            found = items[thai_word];
+        // Search for exact Thai word match across all available categories
+        for (const category of availableCategories) {
+          if (data[category][thai_word]) {
+            found = data[category][thai_word];
             foundCategory = category;
             logDebug(`Found exact match in category: ${category}`);
             break;
@@ -476,7 +467,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
     }
   } catch (err) {
-    // Changed from 'error' to 'err'
     logError(`Error handling tool call "${name}":`, err.message);
     logError("Stack trace:", err.stack);
     throw err;
@@ -497,17 +487,16 @@ async function main() {
     await server.connect(transport);
     logInfo("Thai Food Dictionary MCP server connected and running on stdio");
 
-    // Try to preload the data
+    // Try to preload the data and categories
     try {
       await fetchThaiFoodData();
-      logInfo("Thai Food Dictionary data preloaded successfully");
+      logInfo(`Thai Food Dictionary data preloaded successfully with ${availableCategories.length} categories`);
+      logDebug("Available categories:", availableCategories);
     } catch (err) {
-      // Changed from 'error' to 'err'
       logError("Failed to preload Thai Food Dictionary data:", err.message);
       logInfo("Data will be loaded on first request");
     }
   } catch (err) {
-    // Changed from 'error' to 'err'
     logError("Failed to start MCP server:", err.message);
     logError("Stack trace:", err.stack);
     process.exit(1);
@@ -526,7 +515,6 @@ process.on("SIGTERM", () => {
 });
 
 process.on("uncaughtException", (err) => {
-  // Changed from 'error' to 'err'
   logError("Uncaught exception:", err.message);
   logError("Stack trace:", err.stack);
   process.exit(1);
@@ -539,7 +527,6 @@ process.on("unhandledRejection", (reason, promise) => {
 
 logDebug("Calling main function...");
 main().catch((err) => {
-  // Changed from 'error' to 'err'
   logError("Fatal error in main():", err.message);
   logError("Stack trace:", err.stack);
   process.exit(1);
