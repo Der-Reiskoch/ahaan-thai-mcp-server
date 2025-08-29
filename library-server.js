@@ -26,8 +26,48 @@ function logInfo(message, ...args) {
 // Global state
 const API_URL = 'https://www.ahaan-thai.de/api/thai-cook-book-library.json';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
+
+// URL prefixes - as requested constants
+const URL_PREFIX_DE_EN = 'https://www.ahaan-thai.de';
+const IMAGE_URL_PREFIX = 'https://bilder.koch-reis.de/';
+
 let cache = null;
 let lastCacheUpdate = 0;
+
+// Utility function to process recipe URLs
+const processRecipeUrls = (recipe) => {
+  const processedRecipe = { ...recipe };
+  
+  // Add URL prefixes for url_de and url_en if they exist and are relative
+  if (processedRecipe.url_de && !processedRecipe.url_de.startsWith('http')) {
+    processedRecipe.url_de = URL_PREFIX_DE_EN + (processedRecipe.url_de.startsWith('/') ? '' : '/') + processedRecipe.url_de;
+  }
+  
+  if (processedRecipe.url_en && !processedRecipe.url_en.startsWith('http')) {
+    processedRecipe.url_en = URL_PREFIX_DE_EN + (processedRecipe.url_en.startsWith('/') ? '' : '/') + processedRecipe.url_en;
+  }
+  
+  // Add image URL prefix if imageUrl exists and is relative
+  if (processedRecipe.imageUrl && !processedRecipe.imageUrl.startsWith('http')) {
+    processedRecipe.imageUrl = IMAGE_URL_PREFIX + (processedRecipe.imageUrl.startsWith('/') ? processedRecipe.imageUrl.substring(1) : processedRecipe.imageUrl);
+  }
+  
+  return processedRecipe;
+};
+
+// Utility function to process all recipes in a cookbook or result set
+const processRecipesUrls = (recipes) => {
+  if (Array.isArray(recipes)) {
+    return recipes.map(processRecipeUrls);
+  } else if (typeof recipes === 'object' && recipes !== null) {
+    const processed = {};
+    for (const [key, recipe] of Object.entries(recipes)) {
+      processed[key] = processRecipeUrls(recipe);
+    }
+    return processed;
+  }
+  return recipes;
+};
 
 // Utility functions
 const fetchCookbookData = async () => {
@@ -112,12 +152,18 @@ const fetchCookbookData = async () => {
       throw new Error('Invalid data structure received from API');
     }
     
-    cache = responseJson;
+    // Process URLs for all recipes in all cookbooks
+    const processedData = {};
+    for (const [cookbookName, cookbook] of Object.entries(responseJson)) {
+      processedData[cookbookName] = processRecipesUrls(cookbook);
+    }
+    
+    cache = processedData;
     lastCacheUpdate = now;
     logInfo('Successfully fetched and cached cookbook data', { 
-      cookbooks: Object.keys(responseJson).length,
-      totalRecipes: Object.values(responseJson).reduce((sum, cookbook) => sum + Object.keys(cookbook).length, 0),
-      sampleCookbooks: Object.keys(responseJson).slice(0, 3)
+      cookbooks: Object.keys(processedData).length,
+      totalRecipes: Object.values(processedData).reduce((sum, cookbook) => sum + Object.keys(cookbook).length, 0),
+      sampleCookbooks: Object.keys(processedData).slice(0, 3)
     });
     return cache;
     
@@ -566,7 +612,9 @@ const run = async () => {
     logInfo('=== SERVER STARTUP ===', { 
       nodeVersion: process.version,
       platform: process.platform,
-      cwd: process.cwd()
+      cwd: process.cwd(),
+      urlPrefixDeEn: URL_PREFIX_DE_EN,
+      imageUrlPrefix: IMAGE_URL_PREFIX
     });
     
     logDebug('Creating server...');
