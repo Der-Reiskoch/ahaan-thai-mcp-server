@@ -8,12 +8,15 @@
     "ahaan-thai-mcp-server": "./dictionary-server.js"
   },
   "scripts": {
-    "start:dictionary": "node dictionary-server.js",
+    "dev:book-info": "node --inspect book-info-server.js",
     "dev:dictionary": "node --inspect dictionary-server.js",
-    "start:library": "node library-server.js",
     "dev:library": "node --inspect library-server.js",
+    "inspect:book-info": "npx @modelcontextprotocol/inspector bash ./run-book-info-server.sh",
     "inspect:dictionary": "npx @modelcontextprotocol/inspector bash ./run-dictionary-server.sh",
-    "inspect:library": "npx @modelcontextprotocol/inspector bash ./run-library-server.sh"
+    "inspect:library": "npx @modelcontextprotocol/inspector bash ./run-library-server.sh",
+    "start:book-info": "node book-info-server.js",
+    "start:dictionary": "node dictionary-server.js",
+    "start:library": "node library-server.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.5.0",

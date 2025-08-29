@@ -12,9 +12,15 @@ A MCP Server for the thai food dictionary. It provides translations of many food
 
 - thai-food-dictionary-server (dictionary-server.js)
 
+## Book Info Server
+
+A MCP Server for the thai cook book library which provides information like author, title, description, isbn, language, level, publisher, year, etc.
+
+- thai-cook-book-info-server (book-info-server.js)
+
 ### Library Server
 
-A MCP Server for the thai cook book library with more than 500 dishes from different cook books
+A MCP Server for the thai cook book library which provides the recipes that are contained in the books.
 
 - thai-cook-book-library-server (library-server.js)
 
@@ -38,6 +44,7 @@ We use bash scripts to start the servers to ensurce the correct node version is 
 So we need to make surethe scripts are executable:
 
 ```bash
+chmod +x run-book-info-server.sh
 chmod +x run-dictionary-server.sh
 chmod +x run-library-server.sh
 ```
@@ -45,10 +52,12 @@ chmod +x run-library-server.sh
 1. Start the servers
 
 ```bash
-./run-dictionary-server.sh
+./run-book-info-server.sh
 ```
 
-or
+```bash
+./run-dictionary-server.sh
+```
 
 ```bash
 ./run-library-server.sh
@@ -57,6 +66,10 @@ or
 1. Inspect the servers
 
 To inspect the servers we use the inspector from `modelcontextprotocol`
+
+```bash
+npm run inspect:book-info
+```
 
 ```bash
 npm run inspect:dictionary
