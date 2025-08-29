@@ -12,9 +12,15 @@ A MCP Server for the thai food dictionary. It provides translations of many food
 
 - thai-food-dictionary-server (dictionary-server.js)
 
+## Book Info Server
+
+A MCP Server for the thai cook book library which provides information like author, title, description, isbn, language, level, publisher, year, etc.
+
+- thai-cook-book-info-server (book-info-server.js)
+
 ### Library Server
 
-A MCP Server for the thai cook book library with more than 500 dishes from different cook books
+A MCP Server for the thai cook book library which provides the recipes that are contained in the books.
 
 - thai-cook-book-library-server (library-server.js)
 
@@ -34,10 +40,11 @@ npm install
 
 1. Make Script executable
 
-We use a script to start the server to ensurce the correct node version is needed.
-So we need to make the script executable:
+We use bash scripts to start the servers to ensurce the correct node version is used.
+So we need to make surethe scripts are executable:
 
 ```bash
+chmod +x run-book-info-server.sh
 chmod +x run-dictionary-server.sh
 chmod +x run-library-server.sh
 ```
@@ -45,10 +52,12 @@ chmod +x run-library-server.sh
 1. Start the servers
 
 ```bash
-./run-dictionary-server.sh
+./run-book-info-server.sh
 ```
 
-or
+```bash
+./run-dictionary-server.sh
+```
 
 ```bash
 ./run-library-server.sh
@@ -56,7 +65,11 @@ or
 
 1. Inspect the servers
 
-to inspect the servers we use the inspector from `modelcontextprotocol`
+To inspect the servers we use the inspector from `modelcontextprotocol`
+
+```bash
+npm run inspect:book-info
+```
 
 ```bash
 npm run inspect:dictionary
@@ -68,12 +81,12 @@ npm run inspect:library
 
 ## Usage
 
-To use the server, you have to configure it in your AI Tool of choice.
+To use the servers, you have to configure them in your AI Tool of choice.
 
 ### Example
 
-This is how your configure the thai-food-dictionary in claude desktop config.
-For MacOs this file is located at `~/Library/Application Support/Claude/config.json`
+This is how you configure the thai-food-dictionary in claude desktop config.
+For MacOs the config file is located at `~/Library/Application Support/Claude/config.json`
 
 ```json
 {
