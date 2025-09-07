@@ -8,15 +8,19 @@
     "ahaan-thai-mcp-server": "./dictionary-server.js"
   },
   "scripts": {
+    "claude": "npx @anthropic-ai/claude-code",
     "dev:book-info": "node --inspect book-info-server.js",
     "dev:dictionary": "node --inspect dictionary-server.js",
     "dev:library": "node --inspect library-server.js",
+    "dev:encyclopedia": "node --inspect encyclopedia-server.js",
     "inspect:book-info": "npx @modelcontextprotocol/inspector bash ./run-book-info-server.sh",
     "inspect:dictionary": "npx @modelcontextprotocol/inspector bash ./run-dictionary-server.sh",
     "inspect:library": "npx @modelcontextprotocol/inspector bash ./run-library-server.sh",
+    "inspect:encyclopedia": "npx @modelcontextprotocol/inspector bash ./run-encyclopedia-server.sh",
     "start:book-info": "node book-info-server.js",
     "start:dictionary": "node dictionary-server.js",
-    "start:library": "node library-server.js"
+    "start:library": "node library-server.js",
+    "start:encyclopedia": "node encyclopedia-server.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.5.0",

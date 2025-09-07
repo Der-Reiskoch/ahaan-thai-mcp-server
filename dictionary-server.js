@@ -10,25 +10,10 @@ import {
   McpError,
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import { logDebug, logError, logInfo } from "./lib/logger.js";
 
 const THAI_FOOD_DICTIONARY_API_URL =
   "https://www.ahaan-thai.de/api/thai-food-dictionary.json";
-
-// Debug logging functions
-function logDebug(message, ...args) {
-  const timestamp = new Date().toISOString();
-  console.error(`[${timestamp}] [DEBUG] ${message}`, ...args);
-}
-
-function logError(message, ...args) {
-  const timestamp = new Date().toISOString();
-  console.error(`[${timestamp}] [ERROR] ${message}`, ...args);
-}
-
-function logInfo(message, ...args) {
-  const timestamp = new Date().toISOString();
-  console.error(`[${timestamp}] [INFO] ${message}`, ...args);
-}
 
 // Thai Food Dictionary Data and Categories Cache
 let thaiFoodData = null;
