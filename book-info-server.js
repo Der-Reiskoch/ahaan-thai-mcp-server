@@ -11,22 +11,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-
-// Debug logging functions
-function logDebug(message, ...args) {
-  const timestamp = new Date().toISOString();
-  console.error(`[${timestamp}] [DEBUG] ${message}`, ...args);
-}
-
-function logError(message, ...args) {
-  const timestamp = new Date().toISOString();
-  console.error(`[${timestamp}] [ERROR] ${message}`, ...args);
-}
-
-function logInfo(message, ...args) {
-  const timestamp = new Date().toISOString();
-  console.error(`[${timestamp}] [INFO] ${message}`, ...args);
-}
+import { logDebug, logError, logInfo } from "./lib/logger.js";
 
 class ThaiBookInfoServer {
   constructor() {
