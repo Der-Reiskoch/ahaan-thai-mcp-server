@@ -8,6 +8,7 @@
     "ahaan-thai-mcp-server": "./dictionary-server.js"
   },
   "scripts": {
+    "claude": "npx @anthropic-ai/claude-code",
     "dev:book-info": "node --inspect book-info-server.js",
     "dev:dictionary": "node --inspect dictionary-server.js",
     "dev:library": "node --inspect library-server.js",
