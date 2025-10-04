@@ -260,44 +260,51 @@ function getEntriesByTag(data, tag, limit = 20) {
 function getAllRegions(data) {
   logDebug('Extracting standardized regions from Thai food dictionary');
 
-  // Define the 4 main Thai regions with Thai names and translations
+  // Define the 4 main Thai regions as a map with Thai names and translations
   // Data from Thai food dictionary (ภาคกลาง, ภาคเหนือ, ภาคอีสาน, ปักษ์ใต้)
-  const regions = [
-    {
-      key: "central-thailand",
+  // Variants found in encyclopedia data:
+  // DE: zentralthailand/Zentralthailand/zentalthailand(typo), nordthailand/Nordthailand, nordostthailand, suedthailand
+  // EN: central thailand/central-thailand, northern thailand, northeast thailand, southern thailand/southern-thailand
+  const regions = {
+    central: {
+      key_de: ["zentralthailand", "Zentralthailand", "zentalthailand"],
+      key_en: ["central thailand", "central-thailand"],
       thai: "ภาคกลาง",
       trans_de: "Phak Klang",
       trans_en: "Phak Klang",
       title_de: "Zentralthailand",
       title_en: "Central Thailand"
     },
-    {
-      key: "northern-thailand",
+    north: {
+      key_de: ["nordthailand", "Nordthailand"],
+      key_en: ["northern thailand"],
       thai: "ภาคเหนือ",
       trans_de: "Phak Nuea",
       trans_en: "Phak Nuea",
       title_de: "Nordthailand",
       title_en: "Northern Thailand"
     },
-    {
-      key: "northeastern-thailand",
+    isaan: {
+      key_de: ["nordostthailand"],
+      key_en: ["northeast thailand"],
       thai: "ภาคอีสาน",
       trans_de: "Phak Isan",
       trans_en: "Phak Isan",
       title_de: "Nordostthailand",
       title_en: "Northeastern Thailand"
     },
-    {
-      key: "southern-thailand",
+    south: {
+      key_de: ["suedthailand"],
+      key_en: ["southern thailand", "southern-thailand"],
       thai: "ปักษ์ใต้",
       trans_de: "Pak Tai",
       trans_en: "Pak Tai",
       title_de: "Südthailand",
       title_en: "Southern Thailand"
     }
-  ];
+  };
 
-  logDebug(`Returning ${regions.length} standardized regions`);
+  logDebug(`Returning ${Object.keys(regions).length} standardized regions`);
   return regions;
 }
 
