@@ -47,18 +47,37 @@ function transformRecipeLink(link) {
   return BASE_URL + link;
 }
 
-// Process encyclopedia entry to transform recipe links and image URLs
+// Transform URL or array of URLs
+function transformUrl(urlOrArray) {
+  if (Array.isArray(urlOrArray)) {
+    return urlOrArray.map(transformRecipeLink);
+  }
+  return transformRecipeLink(urlOrArray);
+}
+
+// Process encyclopedia entry to transform all URLs (recipe links, relationship links, and image URLs)
 function processEntry(entry) {
   const processed = { ...entry };
 
-  // Transform German recipes
-  if (processed.de && processed.de.recipes) {
-    processed.de.recipes = processed.de.recipes.map(transformRecipeLink);
+  // Fields that contain URLs or arrays of URLs
+  const urlFields = ['url', 'recipes', 'usedBy', 'uses', 'fits', 'fittedBy', 'variations', 'variationOf'];
+
+  // Transform German URL fields
+  if (processed.de) {
+    urlFields.forEach(field => {
+      if (processed.de[field]) {
+        processed.de[field] = transformUrl(processed.de[field]);
+      }
+    });
   }
 
-  // Transform English recipes
-  if (processed.en && processed.en.recipes) {
-    processed.en.recipes = processed.en.recipes.map(transformRecipeLink);
+  // Transform English URL fields
+  if (processed.en) {
+    urlFields.forEach(field => {
+      if (processed.en[field]) {
+        processed.en[field] = transformUrl(processed.en[field]);
+      }
+    });
   }
 
   // Transform image URL
