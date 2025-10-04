@@ -256,25 +256,35 @@ function getEntriesByTag(data, tag, limit = 20) {
   return results;
 }
 
-// Helper function to get all unique regions
+// Helper function to get all unique regions with translations
 function getAllRegions(data) {
-  logDebug('Extracting all unique regions from encyclopedia');
+  logDebug('Extracting standardized regions from encyclopedia');
 
-  const regionsSet = new Set();
-
-  data.forEach(entry => {
-    // Get regions from German entries
-    if (entry.de && entry.de.regions) {
-      entry.de.regions.forEach(region => regionsSet.add(region));
+  // Define the 4 main Thai regions with their translations
+  const regions = [
+    {
+      key: "central-thailand",
+      de: "Zentralthailand",
+      en: "Central Thailand"
+    },
+    {
+      key: "northern-thailand",
+      de: "Nordthailand",
+      en: "Northern Thailand"
+    },
+    {
+      key: "northeastern-thailand",
+      de: "Nordostthailand",
+      en: "Northeastern Thailand"
+    },
+    {
+      key: "southern-thailand",
+      de: "Südthailand",
+      en: "Southern Thailand"
     }
-    // Get regions from English entries
-    if (entry.en && entry.en.regions) {
-      entry.en.regions.forEach(region => regionsSet.add(region));
-    }
-  });
+  ];
 
-  const regions = Array.from(regionsSet).sort();
-  logDebug(`Found ${regions.length} unique regions`);
+  logDebug(`Returning ${regions.length} standardized regions`);
   return regions;
 }
 
