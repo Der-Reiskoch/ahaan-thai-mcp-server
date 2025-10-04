@@ -5,5 +5,5 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm use 18.17.0
+nvm use 18.17.0 >&2
 node ./book-info-server.js
