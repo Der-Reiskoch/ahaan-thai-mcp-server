@@ -22,6 +22,16 @@ let encyclopediaData = null;
 
 // Transform recipe links to full URLs based on their type
 function transformRecipeLink(link) {
+  // External links with autotranslation: ?trans=TH-DE or &trans=TH-DE
+  // Remove trans param and wrap with Google Translate URL
+  if ((link.startsWith('http://') || link.startsWith('https://')) && link.includes('trans=TH-DE')) {
+    // Remove trans parameter - handle both ?trans=TH-DE and &trans=TH-DE
+    let cleanUrl = link.replace(/\?trans=TH-DE(&|$)/, '?'); // ?trans=TH-DE& -> ? or ?trans=TH-DE$ -> (empty)
+    cleanUrl = cleanUrl.replace(/&trans=TH-DE/, '');       // &trans=TH-DE -> (empty)
+    cleanUrl = cleanUrl.replace(/\?$/, '');                // Remove trailing ? if no other params
+    return `https://translate.google.com/translate?sl=th&tl=de&js=y&prev=_t&hl=de&ie=UTF-8&u=${encodeURIComponent(cleanUrl)}`;
+  }
+
   // Already a full URL - return as is
   if (link.startsWith('http://') || link.startsWith('https://')) {
     return link;
