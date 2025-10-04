@@ -15,7 +15,7 @@ import { logDebug, logError, logInfo } from "./lib/logger.js";
 const THAI_FOOD_ENCYCLOPEDIA_API_URL =
   "https://www.ahaan-thai.de/api/thai-food-encyclopedia.json";
 const BASE_URL = "https://www.ahaan-thai.de";
-const IMAGE_BASE_URL = "https://bilder.koch-reis.de/";
+const IMAGE_BASE_URL = "https://bilder.koch-reis.de/media/";
 
 // Thai Food Encyclopedia Data Cache
 let encyclopediaData = null;
