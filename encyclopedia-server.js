@@ -256,31 +256,44 @@ function getEntriesByTag(data, tag, limit = 20) {
   return results;
 }
 
-// Helper function to get all unique regions with translations
+// Helper function to get all unique regions with translations from Thai food dictionary
 function getAllRegions(data) {
-  logDebug('Extracting standardized regions from encyclopedia');
+  logDebug('Extracting standardized regions from Thai food dictionary');
 
-  // Define the 4 main Thai regions with their translations
+  // Define the 4 main Thai regions with Thai names and translations
+  // Data from Thai food dictionary (ภาคกลาง, ภาคเหนือ, ภาคอีสาน, ปักษ์ใต้)
   const regions = [
     {
       key: "central-thailand",
-      de: "Zentralthailand",
-      en: "Central Thailand"
+      thai: "ภาคกลาง",
+      trans_de: "Phak Klang",
+      trans_en: "Phak Klang",
+      title_de: "Zentralthailand",
+      title_en: "Central Thailand"
     },
     {
       key: "northern-thailand",
-      de: "Nordthailand",
-      en: "Northern Thailand"
+      thai: "ภาคเหนือ",
+      trans_de: "Phak Nuea",
+      trans_en: "Phak Nuea",
+      title_de: "Nordthailand",
+      title_en: "Northern Thailand"
     },
     {
       key: "northeastern-thailand",
-      de: "Nordostthailand",
-      en: "Northeastern Thailand"
+      thai: "ภาคอีสาน",
+      trans_de: "Phak Isan",
+      trans_en: "Phak Isan",
+      title_de: "Nordostthailand",
+      title_en: "Northeastern Thailand"
     },
     {
       key: "southern-thailand",
-      de: "Südthailand",
-      en: "Southern Thailand"
+      thai: "ปักษ์ใต้",
+      trans_de: "Pak Tai",
+      trans_en: "Pak Tai",
+      title_de: "Südthailand",
+      title_en: "Southern Thailand"
     }
   ];
 
