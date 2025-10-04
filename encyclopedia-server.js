@@ -22,14 +22,19 @@ let encyclopediaData = null;
 
 // Transform recipe links to full URLs based on their type
 function transformRecipeLink(link) {
-  // External links with autotranslation: ?trans=TH-DE or &trans=TH-DE
+  // External links with autotranslation: ?trans=TH-DE, &trans=TH-DE, ?trans=TH-EN, &trans=TH-EN
   // Remove trans param and wrap with Google Translate URL
-  if ((link.startsWith('http://') || link.startsWith('https://')) && link.includes('trans=TH-DE')) {
-    // Remove trans parameter - handle both ?trans=TH-DE and &trans=TH-DE
-    let cleanUrl = link.replace(/\?trans=TH-DE(&|$)/, '?'); // ?trans=TH-DE& -> ? or ?trans=TH-DE$ -> (empty)
-    cleanUrl = cleanUrl.replace(/&trans=TH-DE/, '');       // &trans=TH-DE -> (empty)
-    cleanUrl = cleanUrl.replace(/\?$/, '');                // Remove trailing ? if no other params
-    return `https://translate.google.com/translate?sl=th&tl=de&js=y&prev=_t&hl=de&ie=UTF-8&u=${encodeURIComponent(cleanUrl)}`;
+  if ((link.startsWith('http://') || link.startsWith('https://')) && /trans=TH-(DE|EN)/.test(link)) {
+    // Extract target language (DE or EN)
+    const targetLang = link.includes('trans=TH-DE') ? 'de' : 'en';
+    const transParam = `trans=TH-${targetLang.toUpperCase()}`;
+
+    // Remove trans parameter - handle both ?trans=... and &trans=...
+    let cleanUrl = link.replace(new RegExp(`\\?${transParam}(&|$)`), '?'); // ?trans=...& -> ? or ?trans=...$ -> (empty)
+    cleanUrl = cleanUrl.replace(new RegExp(`&${transParam}`), '');         // &trans=... -> (empty)
+    cleanUrl = cleanUrl.replace(/\?$/, '');                                // Remove trailing ? if no other params
+
+    return `https://translate.google.com/translate?sl=th&tl=${targetLang}&js=y&prev=_t&hl=${targetLang}&ie=UTF-8&u=${encodeURIComponent(cleanUrl)}`;
   }
 
   // Already a full URL - return as is
