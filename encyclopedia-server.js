@@ -314,13 +314,12 @@ function getAllRegions(data) {
 
   // Define the 4 main Thai regions as a map with Thai names and translations
   // Data from Thai food dictionary (ภาคกลาง, ภาคเหนือ, ภาคอีสาน, ปักษ์ใต้)
-  // Variants found in encyclopedia data:
-  // DE: zentralthailand/Zentralthailand/zentalthailand(typo), nordthailand/Nordthailand, nordostthailand, suedthailand
-  // EN: central thailand/central-thailand, northern thailand, northeast thailand, southern thailand/southern-thailand
+  // API data now uses canonical keys: zentralthailand, nordthailand, nordostthailand, suedthailand (DE)
+  // and central-thailand, northern-thailand, northeastern-thailand, southern-thailand (EN)
   const regions = {
     central: {
-      key_de: ["zentralthailand", "Zentralthailand", "zentalthailand"],
-      key_en: ["central thailand", "central-thailand"],
+      key_de: "zentralthailand",
+      key_en: "central-thailand",
       thai: "ภาคกลาง",
       trans_de: "Phak Klang",
       trans_en: "Phak Klang",
@@ -328,8 +327,8 @@ function getAllRegions(data) {
       title_en: "Central Thailand",
     },
     north: {
-      key_de: ["nordthailand", "Nordthailand"],
-      key_en: ["northern thailand"],
+      key_de: "nordthailand",
+      key_en: "northern-thailand",
       thai: "ภาคเหนือ",
       trans_de: "Phak Nuea",
       trans_en: "Phak Nuea",
@@ -337,8 +336,8 @@ function getAllRegions(data) {
       title_en: "Northern Thailand",
     },
     isaan: {
-      key_de: ["nordostthailand"],
-      key_en: ["northeast thailand"],
+      key_de: "nordostthailand",
+      key_en: "northeastern-thailand",
       thai: "ภาคอีสาน",
       trans_de: "Phak Isan",
       trans_en: "Phak Isan",
@@ -346,8 +345,8 @@ function getAllRegions(data) {
       title_en: "Northeastern Thailand (Isaan)",
     },
     south: {
-      key_de: ["suedthailand"],
-      key_en: ["southern thailand", "southern-thailand"],
+      key_de: "suedthailand",
+      key_en: "southern-thailand",
       thai: "ปักษ์ใต้",
       trans_de: "Pak Tai",
       trans_en: "Pak Tai",
