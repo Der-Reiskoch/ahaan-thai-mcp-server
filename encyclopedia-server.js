@@ -239,21 +239,43 @@ function getEntriesByRegion(data, region, limit = 20) {
 // Helper function to get entries by tag
 function getEntriesByTag(data, tag, limit = 20) {
   logDebug(`Getting entries with tag "${tag}" with limit ${limit}`);
-  
+
   const results = data.filter(entry => {
     const tagLower = tag.toLowerCase();
     return (
-      (entry.de && entry.de.tags && entry.de.tags.some(t => 
+      (entry.de && entry.de.tags && entry.de.tags.some(t =>
         t.toLowerCase().includes(tagLower)
       )) ||
-      (entry.en && entry.en.tags && entry.en.tags.some(t => 
+      (entry.en && entry.en.tags && entry.en.tags.some(t =>
         t.toLowerCase().includes(tagLower)
       ))
     );
   }).slice(0, limit);
-  
+
   logDebug(`Found ${results.length} entries with tag "${tag}"`);
   return results;
+}
+
+// Helper function to get all unique regions
+function getAllRegions(data) {
+  logDebug('Extracting all unique regions from encyclopedia');
+
+  const regionsSet = new Set();
+
+  data.forEach(entry => {
+    // Get regions from German entries
+    if (entry.de && entry.de.regions) {
+      entry.de.regions.forEach(region => regionsSet.add(region));
+    }
+    // Get regions from English entries
+    if (entry.en && entry.en.regions) {
+      entry.en.regions.forEach(region => regionsSet.add(region));
+    }
+  });
+
+  const regions = Array.from(regionsSet).sort();
+  logDebug(`Found ${regions.length} unique regions`);
+  return regions;
 }
 
 // Create and configure the server
@@ -386,6 +408,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           },
         },
       },
+      {
+        name: "list_regions",
+        description: "Get a list of all unique Thai regions found in the encyclopedia",
+        inputSchema: {
+          type: "object",
+          properties: {},
+        },
+      },
     ],
   };
 });
@@ -453,13 +483,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "get_all_entries": {
         const { limit = 100 } = args;
         const results = data.slice(0, limit);
-        
+
         logInfo(`Returning ${results.length} encyclopedia entries`);
         return {
           content: [
             {
               type: "text",
               text: JSON.stringify(results, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "list_regions": {
+        const regions = getAllRegions(data);
+
+        logInfo(`Returning ${regions.length} unique regions`);
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(regions, null, 2),
             },
           ],
         };
