@@ -47,35 +47,65 @@ function transformRecipeLink(link) {
   return BASE_URL + link;
 }
 
-// Transform URL or array of URLs
-function transformUrl(urlOrArray) {
-  if (Array.isArray(urlOrArray)) {
-    return urlOrArray.map(transformRecipeLink);
+// Ensure relationship links end with /
+function ensureTrailingSlash(url) {
+  // Don't add trailing slash to:
+  // - URLs with hash fragments (#)
+  // - URLs with query strings (?)
+  if (url.includes('#') || url.includes('?')) {
+    return url;
   }
-  return transformRecipeLink(urlOrArray);
+
+  // Add trailing slash if not present
+  return url.endsWith('/') ? url : url + '/';
+}
+
+// Transform URL or array of URLs
+function transformUrl(urlOrArray, addTrailingSlash = false) {
+  if (Array.isArray(urlOrArray)) {
+    return urlOrArray.map(url => {
+      const transformed = transformRecipeLink(url);
+      return addTrailingSlash ? ensureTrailingSlash(transformed) : transformed;
+    });
+  }
+  const transformed = transformRecipeLink(urlOrArray);
+  return addTrailingSlash ? ensureTrailingSlash(transformed) : transformed;
 }
 
 // Process encyclopedia entry to transform all URLs (recipe links, relationship links, and image URLs)
 function processEntry(entry) {
   const processed = { ...entry };
 
-  // Fields that contain URLs or arrays of URLs
-  const urlFields = ['url', 'recipes', 'usedBy', 'uses', 'fits', 'fittedBy', 'variations', 'variationOf'];
+  // Recipe fields (don't add trailing slash - can have #anchors)
+  const recipeFields = ['recipes'];
+
+  // Relationship fields (add trailing slash if missing)
+  const relationshipFields = ['url', 'usedBy', 'uses', 'fits', 'fittedBy', 'variations', 'variationOf'];
 
   // Transform German URL fields
   if (processed.de) {
-    urlFields.forEach(field => {
+    recipeFields.forEach(field => {
       if (processed.de[field]) {
-        processed.de[field] = transformUrl(processed.de[field]);
+        processed.de[field] = transformUrl(processed.de[field], false);
+      }
+    });
+    relationshipFields.forEach(field => {
+      if (processed.de[field]) {
+        processed.de[field] = transformUrl(processed.de[field], true);
       }
     });
   }
 
   // Transform English URL fields
   if (processed.en) {
-    urlFields.forEach(field => {
+    recipeFields.forEach(field => {
       if (processed.en[field]) {
-        processed.en[field] = transformUrl(processed.en[field]);
+        processed.en[field] = transformUrl(processed.en[field], false);
+      }
+    });
+    relationshipFields.forEach(field => {
+      if (processed.en[field]) {
+        processed.en[field] = transformUrl(processed.en[field], true);
       }
     });
   }
