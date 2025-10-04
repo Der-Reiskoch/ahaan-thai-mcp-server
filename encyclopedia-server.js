@@ -359,6 +359,45 @@ function getAllRegions(data) {
   return regions;
 }
 
+// Helper function to get relationship types with translations from i18n
+function getRelationshipTypes(data) {
+  logDebug("Extracting relationship types from i18n");
+
+  // Define relationship field types with their i18n translations
+  // Translations from /i18n/de.json and /i18n/en.json
+  const relationships = {
+    uses: {
+      title_de: "Verwendet",
+      title_en: "Uses",
+    },
+    usedBy: {
+      title_de: "Verwendung",
+      title_en: "Usages",
+    },
+    fits: {
+      title_de: "Passt gut zu",
+      title_en: "Fits",
+    },
+    fittedBy: {
+      title_de: "Dazu passt gut",
+      title_en: "Best accompanied by",
+    },
+    variations: {
+      title_de: "Variationen",
+      title_en: "Variations",
+    },
+    variationOf: {
+      title_de: "Eine Variation von",
+      title_en: "A Variation of",
+    },
+  };
+
+  logDebug(
+    `Returning ${Object.keys(relationships).length} relationship types`
+  );
+  return relationships;
+}
+
 // Create and configure the server
 const server = new Server(
   {
@@ -504,6 +543,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {},
         },
       },
+      {
+        name: "list_relationships",
+        description:
+          "Get a list of all relationship field types with German and English translations",
+        inputSchema: {
+          type: "object",
+          properties: {},
+        },
+      },
     ],
   };
 });
@@ -595,12 +643,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "list_regions": {
         const regions = getAllRegions(data);
 
-        logInfo(`Returning ${regions.length} unique regions`);
+        logInfo(`Returning ${Object.keys(regions).length} unique regions`);
         return {
           content: [
             {
               type: "text",
               text: JSON.stringify(regions, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "list_relationships": {
+        const relationships = getRelationshipTypes(data);
+
+        logInfo(
+          `Returning ${Object.keys(relationships).length} relationship types`
+        );
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(relationships, null, 2),
             },
           ],
         };
