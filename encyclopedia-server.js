@@ -14,9 +14,60 @@ import { logDebug, logError, logInfo } from "./lib/logger.js";
 
 const THAI_FOOD_ENCYCLOPEDIA_API_URL =
   "https://www.ahaan-thai.de/api/thai-food-encyclopedia.json";
+const BASE_URL = "https://www.ahaan-thai.de";
+const IMAGE_BASE_URL = "https://bilder.koch-reis.de/";
 
 // Thai Food Encyclopedia Data Cache
 let encyclopediaData = null;
+
+// Transform recipe links to full URLs based on their type
+function transformRecipeLink(link) {
+  // Already a full URL - return as is
+  if (link.startsWith('http://') || link.startsWith('https://')) {
+    return link;
+  }
+
+  // Reiskoch links: /reiskoch/... -> https://www.der-reiskoch.de/...
+  if (link.startsWith('/reiskoch/')) {
+    return link.replace('/reiskoch/', 'https://www.der-reiskoch.de/');
+  }
+
+  // PDF links: /aa-pdf/... -> /pdf/andreas-ayasse/...
+  if (link.startsWith('/aa-pdf/')) {
+    return BASE_URL + link.replace('/aa-pdf/', '/pdf/andreas-ayasse/');
+  }
+
+  // YouTube links: /youtube/... -> https://www.youtube.com/watch?v=...
+  if (link.startsWith('/youtube/')) {
+    const videoId = link.replace('/youtube/', '');
+    return `https://www.youtube.com/watch?v=${videoId}`;
+  }
+
+  // All other internal links (cookbooks, etc.) - prepend base URL
+  return BASE_URL + link;
+}
+
+// Process encyclopedia entry to transform recipe links and image URLs
+function processEntry(entry) {
+  const processed = { ...entry };
+
+  // Transform German recipes
+  if (processed.de && processed.de.recipes) {
+    processed.de.recipes = processed.de.recipes.map(transformRecipeLink);
+  }
+
+  // Transform English recipes
+  if (processed.en && processed.en.recipes) {
+    processed.en.recipes = processed.en.recipes.map(transformRecipeLink);
+  }
+
+  // Transform image URL
+  if (processed.imageUrl && !processed.imageUrl.startsWith('http')) {
+    processed.imageUrl = IMAGE_BASE_URL + processed.imageUrl;
+  }
+
+  return processed;
+}
 
 // Fetch the Thai Food Encyclopedia data
 async function fetchEncyclopediaData() {
@@ -37,8 +88,11 @@ async function fetchEncyclopediaData() {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      encyclopediaData = await response.json();
-      
+      const rawData = await response.json();
+
+      // Transform all entries to include full recipe URLs
+      encyclopediaData = rawData.map(processEntry);
+
       logInfo(`Thai Food Encyclopedia loaded successfully:`);
       logInfo(`- Total entries: ${encyclopediaData.length}`);
       logDebug("Encyclopedia data loaded with entries for dishes, ingredients, and cooking methods");
