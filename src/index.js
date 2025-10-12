@@ -273,7 +273,7 @@ app.get('/api/encyclopedia/relationships', asyncHandler(async (req, res) => {
 // GET / - API documentation
 app.get('/', (req, res) => {
   res.json({
-    name: 'Thai Food API',
+    name: 'Ahaan Thai MCP Server',
     version: '1.0.0',
     description: 'REST API for Thai food dictionary, cookbooks, library, and encyclopedia',
     endpoints: {
@@ -347,14 +347,12 @@ app.use((err, req, res, next) => {
 // START SERVER
 // ============================================================================
 
-// Only start server if not being imported as a module
-if (import.meta.url === `file://${process.argv[1]}`) {
-  app.listen(PORT, () => {
-    console.log(`\n🚀 Thai Food API Server running on http://localhost:${PORT}`);
-    console.log(`📚 API Documentation: http://localhost:${PORT}`);
-    console.log(`💚 Health Check: http://localhost:${PORT}/health\n`);
-  });
-}
+// Start server (Passenger will manage the process)
+app.listen(PORT, () => {
+  console.log(`\n🚀 Ahaan Thai MCP Server running on http://localhost:${PORT}`);
+  console.log(`📚 API Documentation: http://localhost:${PORT}`);
+  console.log(`💚 Health Check: http://localhost:${PORT}/health\n`);
+});
 
 // Export app for testing
 export default app;
