@@ -15,9 +15,9 @@ Four MCP (Model Context Protocol) servers for local usage:
 3. **Library Server** (`library-server.js`): Thai cookbook recipes and content
 4. **Encyclopedia Server** (`encyclopedia-server.js`): Thai food encyclopedia with dishes, ingredients, and cooking methods
 
-### REST API (Remote Usage via HTTP)
+### HTTP MCP Server (Remote Usage via HTTP)
 
-Single REST API server (`src/index.js`) that exposes all MCP functionality via HTTP endpoints for remote access.
+Single HTTP MCP server (`src/index.js`) that exposes all MCP functionality via Streamable HTTP transport for remote access. Provides 26 tools combining all 4 data sources.
 
 ### Shared Business Logic
 
@@ -33,7 +33,7 @@ All business logic is shared between MCP servers and REST API via `src/lib/*`:
 **Benefits:**
 - No code duplication
 - Single source of truth for business logic
-- Both local (MCP) and remote (REST) modes available
+- Both local (stdio) and remote (HTTP) MCP modes available
 
 ### Key Constants and URLs
 
@@ -45,20 +45,26 @@ All business logic is shared between MCP servers and REST API via `src/lib/*`:
 
 ## Development Commands
 
-### MCP Server Management (Local)
+### Stdio MCP Servers (Local)
 
 ```bash
-# Start MCP servers directly
-npm run start:dictionary
-npm run start:book-info
-npm run start:library
-npm run start:encyclopedia
+# Start servers
+npm run stdio:dictionary:start
+npm run stdio:book-info:start
+npm run stdio:library:start
+npm run stdio:encyclopedia:start
 
 # Start with debugging
-npm run dev:dictionary
-npm run dev:book-info
-npm run dev:library
-npm run dev:encyclopedia
+npm run stdio:dictionary:dev
+npm run stdio:book-info:dev
+npm run stdio:library:dev
+npm run stdio:encyclopedia:dev
+
+# Inspect servers
+npm run stdio:dictionary:inspect
+npm run stdio:book-info:inspect
+npm run stdio:library:inspect
+npm run stdio:encyclopedia:inspect
 
 # Start via bash scripts (ensures correct Node.js version)
 ./run-dictionary-server.sh
@@ -67,30 +73,20 @@ npm run dev:encyclopedia
 ./run-encyclopedia-server.sh
 ```
 
-### Server Inspection
+### HTTP MCP Server (Remote)
 
 ```bash
-# Inspect MCP servers using the MCP inspector
-npm run inspect:dictionary
-npm run inspect:book-info
-npm run inspect:library
-npm run inspect:encyclopedia
-```
-
-### REST API Management (Remote)
-
-```bash
-# Start REST API server
-npm run start:rest
+# Start HTTP MCP server
+npm run http-mcp:start
 
 # Start with auto-reload
-npm run dev:rest
-
-# Test REST API
-npm run test:rest
+npm run http-mcp:dev
 
 # Build for deployment
-npm run build:rest
+npm run http-mcp:build
+
+# Open MCP Inspector
+npm run http-mcp:inspect
 ```
 
 ### Prerequisites
@@ -101,8 +97,8 @@ npm run build:rest
 ## Project Structure
 
 ```
-├── src/                          # REST API (Development)
-│   ├── index.js                  # REST API Server
+├── src/                          # HTTP MCP Server (Development)
+│   ├── index.js                  # HTTP MCP Server
 │   └── lib/                      # Shared Business Logic
 │       ├── cache.js              # 5-minute TTL cache
 │       ├── logger.js             # Debug logging
@@ -112,30 +108,29 @@ npm run build:rest
 │       └── encyclopedia-logic.js # Encyclopedia business logic
 │
 ├── dist/                         # Production Build (for deployment)
-│   ├── index.js                  # Bundled REST API (28.8kb)
-│   └── package.json              # Production dependencies only
+│   ├── index.js                  # Bundled HTTP MCP Server (37kb)
+│   └── package.json              # Auto-generated
 │
-├── dictionary-server.js          # MCP Server (uses src/lib/)
-├── book-info-server.js           # MCP Server (uses src/lib/)
-├── library-server.js             # MCP Server (uses src/lib/)
-├── encyclopedia-server.js        # MCP Server (uses src/lib/)
+├── dictionary-server.js          # Stdio MCP Server (uses src/lib/)
+├── book-info-server.js           # Stdio MCP Server (uses src/lib/)
+├── library-server.js             # Stdio MCP Server (uses src/lib/)
+├── encyclopedia-server.js        # Stdio MCP Server (uses src/lib/)
 │
 ├── run-*.sh                      # Startup scripts (ensure Node version)
-├── test-api.js                   # REST API test suite
+├── build-dist-package.js         # Generates dist/package.json
 │
 ├── README.md                     # Main documentation
-├── README-REST-API.md            # REST API documentation
-├── DEPLOYMENT.md                 # Deployment guide
+├── MCP-CLIENT-SETUP.md           # Client setup guide
 └── CLAUDE.md                     # This file
 ```
 
 ### Key Files
 
-- **MCP Servers**: `*-server.js` files in root - use shared logic from `src/lib/`
-- **REST API**: `src/index.js` - uses same shared logic
+- **Stdio MCP Servers**: `*-server.js` files in root - use shared logic from `src/lib/`
+- **HTTP MCP Server**: `src/index.js` - uses same shared logic, provides 26 tools
 - **Shared Logic**: `src/lib/*` - single source of truth for all business logic
-- **Build Output**: `dist/index.js` - bundled for Netcup deployment (28.8kb)
-- **Tests**: `test-api.js` - comprehensive REST API test suite
+- **Build Output**: `dist/index.js` - bundled for Netcup deployment (37kb, CommonJS)
+- **Build Script**: `build-dist-package.js` - auto-generates `dist/package.json`
 
 ## Configuration
 
@@ -166,6 +161,23 @@ MCP servers are configured in AI tools (like Claude Desktop) using the bash scri
 }
 ```
 
-### Remote REST API
+### Remote HTTP MCP Server
 
+The HTTP MCP server is configured via `mcp-remote` (a proxy that bridges stdio to HTTP):
+
+```json
+{
+  "mcpServers": {
+    "ahaan-thai": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.ahaan-thai.de/mcp"
+      ]
+    }
+  }
+}
+```
+
+See [MCP-CLIENT-SETUP.md](./MCP-CLIENT-SETUP.md) for detailed client configuration.
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for deployment instructions to Netcup or other hosting providers.

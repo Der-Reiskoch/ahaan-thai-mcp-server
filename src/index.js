@@ -1,357 +1,653 @@
 #!/usr/bin/env node
 
 /**
- * REST API Wrapper for Thai Food MCP Servers
- * Exposes all MCP server functionality via HTTP REST API
- * For deployment to Netcup or other web hosts
+ * Ahaan Thai MCP Server
+ * MCP server with HTTP transport for Thai food data
+ * Combines Dictionary, Book Info, Library, and Encyclopedia
  */
 
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import express from 'express';
 import cors from 'cors';
+import { z } from 'zod';
 import * as dictionary from './lib/dictionary-logic.js';
 import * as bookInfo from './lib/book-info-logic.js';
 import * as library from './lib/library-logic.js';
 import * as encyclopedia from './lib/encyclopedia-logic.js';
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+// Create MCP Server
+const server = new McpServer({
+  name: 'ahaan-thai',
+  version: '1.0.0',
+});
 
-// Middleware
-app.use(cors());
+// ============================================================================
+// DICTIONARY TOOLS
+// ============================================================================
+
+server.registerTool(
+  'search_dictionary',
+  {
+    title: 'Search Thai Food Dictionary',
+    description: 'Search for Thai food terms across all categories or within a specific category',
+    inputSchema: {
+      query: z.string().describe('Search term (Thai, English, or German)'),
+      category: z.string().optional().describe('Optional category to search within'),
+    },
+  },
+  async ({ query, category }) => {
+    const results = await dictionary.searchDictionary(query, category || null);
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(results, null, 2),
+      }],
+    };
+  }
+);
+
+server.registerTool(
+  'get_dictionary_category',
+  {
+    title: 'Get Dictionary Category',
+    description: 'Get all items in a specific dictionary category',
+    inputSchema: {
+      category: z.string().describe('Category name (e.g., "curries", "soups")'),
+    },
+  },
+  async ({ category }) => {
+    try {
+      const items = await dictionary.getCategory(category);
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify(items, null, 2),
+        }],
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: error.message,
+        }],
+        isError: true,
+      };
+    }
+  }
+);
+
+server.registerTool(
+  'translate_thai_word',
+  {
+    title: 'Translate Thai Word',
+    description: 'Translate a Thai word to English and German',
+    inputSchema: {
+      word: z.string().describe('Thai word to translate'),
+    },
+  },
+  async ({ word }) => {
+    const result = await dictionary.translateWord(word);
+    if (!result) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Thai word "${word}" not found in dictionary`,
+        }],
+        isError: true,
+      };
+    }
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(result, null, 2),
+      }],
+    };
+  }
+);
+
+server.registerTool(
+  'list_dictionary_categories',
+  {
+    title: 'List Dictionary Categories',
+    description: 'List all available dictionary categories',
+    inputSchema: {},
+  },
+  async () => {
+    const categories = await dictionary.getCategoryList();
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(categories, null, 2),
+      }],
+    };
+  }
+);
+
+// ============================================================================
+// BOOK INFO TOOLS
+// ============================================================================
+
+server.registerTool(
+  'list_cookbooks',
+  {
+    title: 'List Thai Cookbooks',
+    description: 'List all Thai cookbooks in the collection',
+    inputSchema: {},
+  },
+  async () => {
+    const books = await bookInfo.listBooks();
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(books, null, 2),
+      }],
+    };
+  }
+);
+
+server.registerTool(
+  'search_cookbooks',
+  {
+    title: 'Search Cookbooks',
+    description: 'Search cookbooks by various criteria',
+    inputSchema: {
+      query: z.string().optional().describe('Search query'),
+      language: z.string().optional().describe('Language code (de, en, th)'),
+      level: z.string().optional().describe('Difficulty level'),
+      author: z.string().optional().describe('Author name'),
+      year: z.string().optional().describe('Publication year'),
+      publisher: z.string().optional().describe('Publisher name'),
+    },
+  },
+  async (filters) => {
+    const books = await bookInfo.searchBooks(filters);
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(books, null, 2),
+      }],
+    };
+  }
+);
+
+server.registerTool(
+  'get_cookbook_by_isbn',
+  {
+    title: 'Get Cookbook by ISBN',
+    description: 'Get detailed information about a cookbook by its ISBN',
+    inputSchema: {
+      isbn: z.string().describe('ISBN of the cookbook'),
+    },
+  },
+  async ({ isbn }) => {
+    try {
+      const book = await bookInfo.getBookByIsbn(isbn);
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify(book, null, 2),
+        }],
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: error.message,
+        }],
+        isError: true,
+      };
+    }
+  }
+);
+
+server.registerTool(
+  'get_cookbooks_by_author',
+  {
+    title: 'Get Cookbooks by Author',
+    description: 'Get all cookbooks by a specific author',
+    inputSchema: {
+      author: z.string().describe('Author name'),
+    },
+  },
+  async ({ author }) => {
+    try {
+      const books = await bookInfo.getBooksByAuthor(author);
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify(books, null, 2),
+        }],
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: error.message,
+        }],
+        isError: true,
+      };
+    }
+  }
+);
+
+server.registerTool(
+  'get_cookbooks_by_language',
+  {
+    title: 'Get Cookbooks by Language',
+    description: 'Get all cookbooks in a specific language',
+    inputSchema: {
+      language: z.string().describe('Language code (de, en, th)'),
+    },
+  },
+  async ({ language }) => {
+    try {
+      const books = await bookInfo.getBooksByLanguage(language);
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify(books, null, 2),
+        }],
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: error.message,
+        }],
+        isError: true,
+      };
+    }
+  }
+);
+
+server.registerTool(
+  'get_cookbook_statistics',
+  {
+    title: 'Get Cookbook Statistics',
+    description: 'Get statistics about the cookbook collection',
+    inputSchema: {},
+  },
+  async () => {
+    const stats = await bookInfo.getBookStatistics();
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(stats, null, 2),
+      }],
+    };
+  }
+);
+
+// ============================================================================
+// LIBRARY TOOLS
+// ============================================================================
+
+server.registerTool(
+  'list_library_cookbooks',
+  {
+    title: 'List Library Cookbooks',
+    description: 'List all cookbooks with recipes in the library',
+    inputSchema: {},
+  },
+  async () => {
+    const cookbooks = await library.listCookbooks();
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(cookbooks, null, 2),
+      }],
+    };
+  }
+);
+
+server.registerTool(
+  'get_cookbook_recipes',
+  {
+    title: 'Get Cookbook Recipes',
+    description: 'Get all recipes from a specific cookbook',
+    inputSchema: {
+      cookbook: z.string().describe('Cookbook name'),
+    },
+  },
+  async ({ cookbook }) => {
+    try {
+      const recipes = await library.getCookbookRecipes(cookbook);
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify(recipes, null, 2),
+        }],
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: error.message,
+        }],
+        isError: true,
+      };
+    }
+  }
+);
+
+server.registerTool(
+  'search_recipes',
+  {
+    title: 'Search Recipes',
+    description: 'Search recipes by query, region, or cookbook',
+    inputSchema: {
+      query: z.string().optional().describe('Search query'),
+      region: z.string().optional().describe('Thai region'),
+      cookbook: z.string().optional().describe('Cookbook name'),
+    },
+  },
+  async (params) => {
+    const results = await library.searchRecipes(params);
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(results, null, 2),
+      }],
+    };
+  }
+);
+
+server.registerTool(
+  'get_recipe',
+  {
+    title: 'Get Recipe Details',
+    description: 'Get detailed information about a specific recipe',
+    inputSchema: {
+      cookbook: z.string().describe('Cookbook name'),
+      recipe_key: z.string().describe('Recipe key/ID'),
+    },
+  },
+  async ({ cookbook, recipe_key }) => {
+    try {
+      const recipe = await library.getRecipeByKey(cookbook, recipe_key);
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify(recipe, null, 2),
+        }],
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: error.message,
+        }],
+        isError: true,
+      };
+    }
+  }
+);
+
+server.registerTool(
+  'get_recipes_by_region',
+  {
+    title: 'Get Recipes by Region',
+    description: 'Get all recipes from a specific Thai region',
+    inputSchema: {
+      region: z.string().describe('Thai region (central, north, isaan, south)'),
+    },
+  },
+  async ({ region }) => {
+    const results = await library.getRecipesByRegion(region);
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(results, null, 2),
+      }],
+    };
+  }
+);
+
+server.registerTool(
+  'get_library_statistics',
+  {
+    title: 'Get Library Statistics',
+    description: 'Get statistics about the recipe library',
+    inputSchema: {},
+  },
+  async () => {
+    const stats = await library.getCookbookStats();
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(stats, null, 2),
+      }],
+    };
+  }
+);
+
+// ============================================================================
+// ENCYCLOPEDIA TOOLS
+// ============================================================================
+
+server.registerTool(
+  'search_encyclopedia',
+  {
+    title: 'Search Encyclopedia',
+    description: 'Search the Thai food encyclopedia',
+    inputSchema: {
+      query: z.string().describe('Search query'),
+      limit: z.number().optional().describe('Maximum number of results (default: 20)'),
+    },
+  },
+  async ({ query, limit }) => {
+    const results = await encyclopedia.searchEntries(query, limit || 20);
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(results, null, 2),
+      }],
+    };
+  }
+);
+
+server.registerTool(
+  'get_encyclopedia_by_region',
+  {
+    title: 'Get Encyclopedia Entries by Region',
+    description: 'Get encyclopedia entries from a specific Thai region',
+    inputSchema: {
+      region: z.string().describe('Thai region'),
+      limit: z.number().optional().describe('Maximum number of results (default: 20)'),
+    },
+  },
+  async ({ region, limit }) => {
+    const results = await encyclopedia.getEntriesByRegion(region, limit || 20);
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(results, null, 2),
+      }],
+    };
+  }
+);
+
+server.registerTool(
+  'get_encyclopedia_by_tag',
+  {
+    title: 'Get Encyclopedia Entries by Tag',
+    description: 'Get encyclopedia entries with a specific tag',
+    inputSchema: {
+      tag: z.string().describe('Tag name'),
+      limit: z.number().optional().describe('Maximum number of results (default: 20)'),
+    },
+  },
+  async ({ tag, limit }) => {
+    const results = await encyclopedia.getEntriesByTag(tag, limit || 20);
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(results, null, 2),
+      }],
+    };
+  }
+);
+
+server.registerTool(
+  'get_all_encyclopedia_entries',
+  {
+    title: 'Get All Encyclopedia Entries',
+    description: 'Get all encyclopedia entries (up to limit)',
+    inputSchema: {
+      limit: z.number().optional().describe('Maximum number of results (default: 100)'),
+    },
+  },
+  async ({ limit }) => {
+    const results = await encyclopedia.getAllEntries(limit || 100);
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(results, null, 2),
+      }],
+    };
+  }
+);
+
+server.registerTool(
+  'list_thai_regions',
+  {
+    title: 'List Thai Regions',
+    description: 'List all Thai regions with their details',
+    inputSchema: {},
+  },
+  async () => {
+    const regions = await encyclopedia.getAllRegions();
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(regions, null, 2),
+      }],
+    };
+  }
+);
+
+server.registerTool(
+  'list_relationship_types',
+  {
+    title: 'List Relationship Types',
+    description: 'List all encyclopedia relationship types',
+    inputSchema: {},
+  },
+  async () => {
+    const relationships = await encyclopedia.getRelationshipTypes();
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(relationships, null, 2),
+      }],
+    };
+  }
+);
+
+// ============================================================================
+// HTTP SERVER SETUP
+// ============================================================================
+
+const app = express();
 app.use(express.json());
 
-// Request logging middleware
+// CORS configuration
+app.use(
+  cors({
+    origin: '*',
+    exposedHeaders: ['Mcp-Session-Id'],
+    allowedHeaders: ['Content-Type', 'Mcp-Session-Id', 'Accept'],
+  })
+);
+
+// Request logging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
   next();
 });
 
-// Error handler wrapper
-const asyncHandler = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
-
-// ============================================================================
-// DICTIONARY ENDPOINTS
-// ============================================================================
-
-// GET /api/dictionary/categories - List all categories
-app.get('/api/dictionary/categories', asyncHandler(async (req, res) => {
-  const categories = await dictionary.getCategoryList();
-  res.json(categories);
-}));
-
-// GET /api/dictionary/search?q=...&category=... - Search dictionary
-app.get('/api/dictionary/search', asyncHandler(async (req, res) => {
-  const { q, category } = req.query;
-
-  if (!q) {
-    return res.status(400).json({ error: 'Query parameter "q" is required' });
-  }
-
-  const results = await dictionary.searchDictionary(q, category || null);
-  res.json({
-    query: q,
-    category: category || 'all',
-    count: results.length,
-    results
-  });
-}));
-
-// GET /api/dictionary/category/:name - Get all items in a category
-app.get('/api/dictionary/category/:name', asyncHandler(async (req, res) => {
-  const { name } = req.params;
-  const items = await dictionary.getCategory(name);
-  res.json({
-    category: name,
-    count: items.length,
-    items
-  });
-}));
-
-// GET /api/dictionary/translate?word=... - Translate Thai word
-app.get('/api/dictionary/translate', asyncHandler(async (req, res) => {
-  const { word } = req.query;
-
-  if (!word) {
-    return res.status(400).json({ error: 'Query parameter "word" is required' });
-  }
-
-  const result = await dictionary.translateWord(word);
-
-  if (!result) {
-    return res.status(404).json({
-      error: `Thai word "${word}" not found in dictionary`
-    });
-  }
-
-  res.json(result);
-}));
-
-// ============================================================================
-// BOOK INFO ENDPOINTS
-// ============================================================================
-
-// GET /api/books - List all books
-app.get('/api/books', asyncHandler(async (req, res) => {
-  const books = await bookInfo.listBooks();
-  res.json({
-    count: books.length,
-    books
-  });
-}));
-
-// GET /api/books/search?query=...&language=...&level=...&author=...&year=...&publisher=...
-app.get('/api/books/search', asyncHandler(async (req, res) => {
-  const filters = req.query;
-  const books = await bookInfo.searchBooks(filters);
-  res.json({
-    filters,
-    count: books.length,
-    books
-  });
-}));
-
-// GET /api/books/isbn/:isbn - Get book by ISBN
-app.get('/api/books/isbn/:isbn', asyncHandler(async (req, res) => {
-  const { isbn } = req.params;
-  const book = await bookInfo.getBookByIsbn(isbn);
-  res.json(book);
-}));
-
-// GET /api/books/author/:name - Get books by author
-app.get('/api/books/author/:name', asyncHandler(async (req, res) => {
-  const { name } = req.params;
-  const books = await bookInfo.getBooksByAuthor(name);
-  res.json({
-    author: name,
-    count: books.length,
-    books
-  });
-}));
-
-// GET /api/books/language/:lang - Get books by language
-app.get('/api/books/language/:lang', asyncHandler(async (req, res) => {
-  const { lang } = req.params;
-  const books = await bookInfo.getBooksByLanguage(lang);
-  res.json({
-    language: lang,
-    count: books.length,
-    books
-  });
-}));
-
-// GET /api/books/stats - Get book statistics
-app.get('/api/books/stats', asyncHandler(async (req, res) => {
-  const stats = await bookInfo.getBookStatistics();
-  res.json(stats);
-}));
-
-// ============================================================================
-// LIBRARY ENDPOINTS
-// ============================================================================
-
-// GET /api/library/cookbooks - List all cookbooks
-app.get('/api/library/cookbooks', asyncHandler(async (req, res) => {
-  const cookbooks = await library.listCookbooks();
-  res.json({
-    count: cookbooks.length,
-    cookbooks
-  });
-}));
-
-// GET /api/library/cookbook/:name - Get all recipes from a cookbook
-app.get('/api/library/cookbook/:name', asyncHandler(async (req, res) => {
-  const { name } = req.params;
-  const recipes = await library.getCookbookRecipes(name);
-  res.json({
-    cookbook: name,
-    count: Object.keys(recipes).length,
-    recipes
-  });
-}));
-
-// GET /api/library/search?query=...&region=...&cookbook=... - Search recipes
-app.get('/api/library/search', asyncHandler(async (req, res) => {
-  const params = req.query;
-  const results = await library.searchRecipes(params);
-  res.json(results);
-}));
-
-// GET /api/library/recipe/:cookbook/:key - Get specific recipe
-app.get('/api/library/recipe/:cookbook/:key', asyncHandler(async (req, res) => {
-  const { cookbook, key } = req.params;
-  const recipe = await library.getRecipeByKey(cookbook, key);
-  res.json(recipe);
-}));
-
-// GET /api/library/region/:region - Get recipes by region
-app.get('/api/library/region/:region', asyncHandler(async (req, res) => {
-  const { region } = req.params;
-  const results = await library.getRecipesByRegion(region);
-  res.json(results);
-}));
-
-// GET /api/library/stats - Get library statistics
-app.get('/api/library/stats', asyncHandler(async (req, res) => {
-  const stats = await library.getCookbookStats();
-  res.json(stats);
-}));
-
-// ============================================================================
-// ENCYCLOPEDIA ENDPOINTS
-// ============================================================================
-
-// GET /api/encyclopedia/search?q=...&limit=... - Search encyclopedia
-app.get('/api/encyclopedia/search', asyncHandler(async (req, res) => {
-  const { q, limit } = req.query;
-
-  if (!q) {
-    return res.status(400).json({ error: 'Query parameter "q" is required' });
-  }
-
-  const results = await encyclopedia.searchEntries(q, limit ? parseInt(limit) : 20);
-  res.json({
-    query: q,
-    count: results.length,
-    results
-  });
-}));
-
-// GET /api/encyclopedia/region/:region?limit=... - Get entries by region
-app.get('/api/encyclopedia/region/:region', asyncHandler(async (req, res) => {
-  const { region } = req.params;
-  const { limit } = req.query;
-
-  const results = await encyclopedia.getEntriesByRegion(region, limit ? parseInt(limit) : 20);
-  res.json({
-    region,
-    count: results.length,
-    results
-  });
-}));
-
-// GET /api/encyclopedia/tag/:tag?limit=... - Get entries by tag
-app.get('/api/encyclopedia/tag/:tag', asyncHandler(async (req, res) => {
-  const { tag } = req.params;
-  const { limit } = req.query;
-
-  const results = await encyclopedia.getEntriesByTag(tag, limit ? parseInt(limit) : 20);
-  res.json({
-    tag,
-    count: results.length,
-    results
-  });
-}));
-
-// GET /api/encyclopedia/entries?limit=... - Get all entries
-app.get('/api/encyclopedia/entries', asyncHandler(async (req, res) => {
-  const { limit } = req.query;
-  const results = await encyclopedia.getAllEntries(limit ? parseInt(limit) : 100);
-  res.json({
-    count: results.length,
-    entries: results
-  });
-}));
-
-// GET /api/encyclopedia/regions - Get all regions
-app.get('/api/encyclopedia/regions', asyncHandler(async (req, res) => {
-  const regions = await encyclopedia.getAllRegions();
-  res.json(regions);
-}));
-
-// GET /api/encyclopedia/relationships - Get all relationship types
-app.get('/api/encyclopedia/relationships', asyncHandler(async (req, res) => {
-  const relationships = await encyclopedia.getRelationshipTypes();
-  res.json(relationships);
-}));
-
-// ============================================================================
-// ROOT & HEALTH CHECK
-// ============================================================================
-
-// GET / - API documentation
-app.get('/', (req, res) => {
-  res.json({
-    name: 'Ahaan Thai MCP Server',
-    version: '1.0.0',
-    description: 'REST API for Thai food dictionary, cookbooks, library, and encyclopedia',
-    endpoints: {
-      dictionary: {
-        'GET /api/dictionary/categories': 'List all dictionary categories',
-        'GET /api/dictionary/search?q=...&category=...': 'Search dictionary',
-        'GET /api/dictionary/category/:name': 'Get items in a category',
-        'GET /api/dictionary/translate?word=...': 'Translate Thai word'
-      },
-      books: {
-        'GET /api/books': 'List all books',
-        'GET /api/books/search?query=...&language=...&level=...': 'Search books',
-        'GET /api/books/isbn/:isbn': 'Get book by ISBN',
-        'GET /api/books/author/:name': 'Get books by author',
-        'GET /api/books/language/:lang': 'Get books by language',
-        'GET /api/books/stats': 'Get book statistics'
-      },
-      library: {
-        'GET /api/library/cookbooks': 'List all cookbooks',
-        'GET /api/library/cookbook/:name': 'Get recipes from cookbook',
-        'GET /api/library/search?query=...&region=...&cookbook=...': 'Search recipes',
-        'GET /api/library/recipe/:cookbook/:key': 'Get specific recipe',
-        'GET /api/library/region/:region': 'Get recipes by region',
-        'GET /api/library/stats': 'Get library statistics'
-      },
-      encyclopedia: {
-        'GET /api/encyclopedia/search?q=...&limit=...': 'Search encyclopedia',
-        'GET /api/encyclopedia/region/:region?limit=...': 'Get entries by region',
-        'GET /api/encyclopedia/tag/:tag?limit=...': 'Get entries by tag',
-        'GET /api/encyclopedia/entries?limit=...': 'Get all entries',
-        'GET /api/encyclopedia/regions': 'Get all regions',
-        'GET /api/encyclopedia/relationships': 'Get relationship types'
-      }
-    },
-    documentation: 'https://github.com/yourusername/ahaan-thai-mcp-server'
-  });
-});
-
-// GET /health - Health check
+// Health check endpoint
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    server: 'ahaan-thai',
+    version: '1.0.0',
   });
 });
 
-// ============================================================================
-// ERROR HANDLING
-// ============================================================================
+// Root endpoint - Info about MCP server
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Ahaan Thai MCP Server',
+    version: '1.0.0',
+    description: 'MCP server for Thai food data - Dictionary, Cookbooks, Library, and Encyclopedia',
+    mcp_endpoint: '/mcp',
+    health_endpoint: '/health',
+    protocol: 'MCP (Model Context Protocol)',
+    transport: 'Streamable HTTP',
+    tools_count: 26,
+    documentation: 'https://github.com/yourusername/ahaan-thai-mcp-server',
+  });
+});
+
+// MCP endpoint - Streamable HTTP
+app.post('/mcp', async (req, res) => {
+  try {
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined,
+      enableJsonResponse: true,
+    });
+
+    res.on('close', () => {
+      transport.close();
+    });
+
+    await server.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  } catch (error) {
+    console.error('Error handling MCP request:', error);
+    if (!res.headersSent) {
+      res.status(500).json({
+        jsonrpc: '2.0',
+        error: {
+          code: -32603,
+          message: 'Internal server error',
+        },
+        id: null,
+      });
+    }
+  }
+});
 
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
     error: 'Not found',
-    path: req.path
+    path: req.path,
+    hint: 'MCP endpoint is at POST /mcp',
   });
 });
 
-// Global error handler
+// Error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-
   res.status(err.status || 500).json({
     error: err.message || 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 });
 
-// ============================================================================
-// START SERVER
-// ============================================================================
-
-// Start server (Passenger will manage the process)
+// Start server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n🚀 Ahaan Thai MCP Server running on http://localhost:${PORT}`);
-  console.log(`📚 API Documentation: http://localhost:${PORT}`);
+  console.log(`📚 MCP Endpoint: http://localhost:${PORT}/mcp`);
   console.log(`💚 Health Check: http://localhost:${PORT}/health\n`);
+}).on('error', (error) => {
+  console.error('Server error:', error);
+  process.exit(1);
 });
 
 // Export app for testing

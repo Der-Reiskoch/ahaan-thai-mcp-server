@@ -4,11 +4,24 @@ A collection of MCP Servers and REST API for the ahaan-thai.de APIs
 
 ## Features
 
-- **Dual-Mode**: Available as both local MCP servers (stdio) and remote REST API
-- **Shared Logic**: Business logic shared between MCP and REST implementations
+- **Dual-Mode**: Available as both local MCP servers (stdio) and remote HTTP MCP server
+- **Shared Logic**: Business logic shared between all implementations
 - **Four APIs**: Dictionary, Book Info, Library, and Encyclopedia
+- **26 Tools**: Access to all functionality via MCP protocol
 
-## MCP Servers (Local Usage)
+## Quick Start
+
+### Remote Access (Recommended)
+
+Use the hosted MCP server at `https://mcp.ahaan-thai.de/mcp` - no local setup required!
+
+See [MCP-CLIENT-SETUP.md](./MCP-CLIENT-SETUP.md) for configuration instructions.
+
+### Local Development
+
+Clone this repo and run locally for development or offline access.
+
+## MCP Servers
 
 Currently we have four servers for the APIs provided by ahaan-thai.de:
 
@@ -36,17 +49,17 @@ A MCP Server for the Thai food encyclopedia with dishes, ingredients, and cookin
 
 - `thai-food-encyclopedia-server` (encyclopedia-server.js)
 
-## REST API (Remote Usage)
+## HTTP MCP Server (Remote Usage)
 
-All MCP functionality is also available as a REST API for remote access.
-
-See [README-REST-API.md](./README-REST-API.md) for details.
+All MCP functionality is available via HTTP at `https://mcp.ahaan-thai.de/mcp`
 
 Quick start:
+
 ```bash
-npm run start:rest    # Start REST API on port 3000
-npm run test:rest     # Run API tests
-npm run build:rest    # Build for deployment
+npm run http-mcp:start    # Start HTTP MCP server on port 3000
+npm run http-mcp:dev      # Start with auto-reload
+npm run http-mcp:build    # Build for deployment
+npm run http-mcp:inspect  # Open MCP Inspector
 ```
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for deployment instructions.
@@ -107,12 +120,29 @@ npm run inspect:encyclopedia
 
 ## Usage with Claude Desktop
 
-To use the servers, configure them in your AI tool of choice.
+### Remote Access (Recommended)
 
-### Example Configuration
+Use the hosted HTTP MCP server - no local setup required!
 
-This is how you configure the servers in Claude Desktop config.
-For macOS the config file is located at `~/Library/Application Support/Claude/claude_desktop_config.json`
+For macOS, edit: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "ahaan-thai": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.ahaan-thai.de/mcp"
+      ]
+    }
+  }
+}
+```
+
+### Local Stdio Servers
+
+Or run the MCP servers locally:
 
 ```json
 {
@@ -137,11 +167,13 @@ For macOS the config file is located at `~/Library/Application Support/Claude/cl
 }
 ```
 
+See [MCP-CLIENT-SETUP.md](./MCP-CLIENT-SETUP.md) for detailed setup instructions.
+
 ## Project Structure
 
 ```
-├── src/                          # REST API (Development)
-│   ├── index.js                  # REST API Server
+├── src/                          # HTTP MCP Server (Development)
+│   ├── index.js                  # HTTP MCP Server
 │   └── lib/                      # Shared Business Logic
 │       ├── cache.js
 │       ├── logger.js
@@ -151,61 +183,60 @@ For macOS the config file is located at `~/Library/Application Support/Claude/cl
 │       └── encyclopedia-logic.js
 │
 ├── dist/                         # Production Build
-│   ├── index.js                  # Bundled REST API (28.8kb)
-│   └── package.json
+│   ├── index.js                  # Bundled HTTP MCP Server (37kb)
+│   └── package.json              # Auto-generated
 │
-├── dictionary-server.js          # MCP Server (uses src/lib/)
-├── book-info-server.js           # MCP Server (uses src/lib/)
-├── library-server.js             # MCP Server (uses src/lib/)
-├── encyclopedia-server.js        # MCP Server (uses src/lib/)
+├── dictionary-server.js          # Stdio MCP Server (uses src/lib/)
+├── book-info-server.js           # Stdio MCP Server (uses src/lib/)
+├── library-server.js             # Stdio MCP Server (uses src/lib/)
+├── encyclopedia-server.js        # Stdio MCP Server (uses src/lib/)
 │
 ├── run-*.sh                      # Startup scripts (ensure Node version)
-├── test-api.js                   # REST API test suite
+├── build-dist-package.js         # Generates dist/package.json
 │
 ├── README.md                     # This file
-├── README-REST-API.md            # REST API documentation
-├── DEPLOYMENT.md                 # Deployment guide
+├── MCP-CLIENT-SETUP.md           # Client setup guide
 └── CLAUDE.md                     # Development guide for Claude Code
 ```
 
 ## Available Scripts
 
-### MCP Servers (Local)
+### Stdio MCP Servers (Local)
 
 ```bash
 # Start servers
-npm run start:dictionary
-npm run start:book-info
-npm run start:library
-npm run start:encyclopedia
+npm run stdio:dictionary:start
+npm run stdio:book-info:start
+npm run stdio:library:start
+npm run stdio:encyclopedia:start
 
 # Start with debugging
-npm run dev:dictionary
-npm run dev:book-info
-npm run dev:library
-npm run dev:encyclopedia
+npm run stdio:dictionary:dev
+npm run stdio:book-info:dev
+npm run stdio:library:dev
+npm run stdio:encyclopedia:dev
 
 # Inspect servers
-npm run inspect:dictionary
-npm run inspect:book-info
-npm run inspect:library
-npm run inspect:encyclopedia
+npm run stdio:dictionary:inspect
+npm run stdio:book-info:inspect
+npm run stdio:library:inspect
+npm run stdio:encyclopedia:inspect
 ```
 
-### REST API (Remote)
+### HTTP MCP Server (Remote)
 
 ```bash
-# Start REST API
-npm run start:rest
+# Start HTTP MCP server
+npm run http-mcp:start
 
 # Start with auto-reload
-npm run dev:rest
-
-# Test REST API
-npm run test:rest
+npm run http-mcp:dev
 
 # Build for deployment
-npm run build:rest
+npm run http-mcp:build
+
+# Open MCP Inspector
+npm run http-mcp:inspect
 ```
 
 ## Development

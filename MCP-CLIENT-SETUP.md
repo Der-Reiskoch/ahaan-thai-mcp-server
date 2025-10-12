@@ -4,11 +4,11 @@ This guide shows you how to connect to the Ahaan Thai MCP Server from AI tools l
 
 ## What is MCP?
 
-The Model Context Protocol (MCP) allows AI assistants to access external data sources and tools. The Ahaan Thai MCP Server provides access to Thai food dictionaries, cookbooks, recipes, and encyclopedia data.
+The Model Context Protocol (MCP) allows AI assistants to access external data sources and tools. The Ahaan Thai MCP Server provides access to Thai food dictionaries, cookbooks, recipes, and encyclopedia data through **26 tools**.
 
-## Option 1: Remote Access (Recommended)
+## Option 1: Remote Access (Recommended) ⭐
 
-Use the hosted REST API at `https://mcp.ahaan-thai.de` - no local setup required!
+Use the hosted HTTP MCP server at `https://mcp.ahaan-thai.de/mcp` - no local setup required!
 
 ### Claude Desktop
 
@@ -23,14 +23,15 @@ Add this to your Claude Desktop config file (`claude_desktop_config.json`):
     "ahaan-thai": {
       "command": "npx",
       "args": [
-        "-y",
-        "@modelcontextprotocol/server-fetch",
-        "https://mcp.ahaan-thai.de"
+        "mcp-remote",
+        "https://mcp.ahaan-thai.de/mcp"
       ]
     }
   }
 }
 ```
+
+**Note**: This uses `mcp-remote` as a proxy to connect Claude Desktop (which only supports stdio) to the remote HTTP MCP server.
 
 ### Claude Code
 
@@ -45,16 +46,15 @@ Add this to your Claude Code config file:
     "ahaan-thai": {
       "command": "npx",
       "args": [
-        "-y",
-        "@modelcontextprotocol/server-fetch",
-        "https://mcp.ahaan-thai.de"
+        "mcp-remote",
+        "https://mcp.ahaan-thai.de/mcp"
       ]
     }
   }
 }
 ```
 
-## Option 2: Local MCP Servers
+## Option 2: Local Stdio Servers
 
 Run the MCP servers locally for offline access or development.
 
@@ -96,43 +96,43 @@ Add one or more servers to your config:
 
 Same configuration as Claude Desktop above.
 
-## Available Tools
+## Available Tools (26 total)
 
-Once configured, you'll have access to these tools in your AI assistant:
+Once configured, you'll have access to these tools:
 
-### Dictionary Tools
+### Dictionary Tools (4)
 
 - `search_dictionary` - Search Thai food terms
-- `get_category` - Get all items in a category
-- `translate_word` - Translate Thai words
-- `list_categories` - List all dictionary categories
+- `get_dictionary_category` - Get all items in a category
+- `translate_thai_word` - Translate Thai words
+- `list_dictionary_categories` - List all dictionary categories
 
-### Book Info Tools
+### Book Info Tools (6)
 
-- `list_books` - List all Thai cookbooks
-- `search_books` - Search cookbooks by criteria
-- `get_book_by_isbn` - Get book details by ISBN
-- `get_books_by_author` - Get books by author name
-- `get_books_by_language` - Filter books by language
-- `get_book_statistics` - Get book collection statistics
+- `list_cookbooks` - List all Thai cookbooks
+- `search_cookbooks` - Search cookbooks by criteria
+- `get_cookbook_by_isbn` - Get book details by ISBN
+- `get_cookbooks_by_author` - Get books by author name
+- `get_cookbooks_by_language` - Filter books by language
+- `get_cookbook_statistics` - Get book collection statistics
 
-### Library Tools
+### Library Tools (6)
 
-- `list_cookbooks` - List all cookbooks with recipes
+- `list_library_cookbooks` - List all cookbooks with recipes
 - `get_cookbook_recipes` - Get all recipes from a cookbook
 - `search_recipes` - Search recipes by query, region, or cookbook
-- `get_recipe_by_key` - Get a specific recipe
+- `get_recipe` - Get a specific recipe
 - `get_recipes_by_region` - Get recipes from a Thai region
-- `get_cookbook_stats` - Get recipe statistics
+- `get_library_statistics` - Get recipe statistics
 
-### Encyclopedia Tools
+### Encyclopedia Tools (6)
 
-- `search_entries` - Search encyclopedia entries
-- `get_entries_by_region` - Get entries by Thai region
-- `get_entries_by_tag` - Get entries by tag
-- `get_all_entries` - Get all encyclopedia entries
-- `list_regions` - List all Thai regions
-- `list_relationships` - List relationship types
+- `search_encyclopedia` - Search encyclopedia entries
+- `get_encyclopedia_by_region` - Get entries by Thai region
+- `get_encyclopedia_by_tag` - Get entries by tag
+- `get_all_encyclopedia_entries` - Get all encyclopedia entries
+- `list_thai_regions` - List all Thai regions
+- `list_relationship_types` - List relationship types
 
 ## Verifying Setup
 
@@ -149,6 +149,9 @@ After configuration:
 
 - Check if the server is online: Visit https://mcp.ahaan-thai.de in your browser
 - Make sure `npx` is installed: Run `npm install -g npx`
+- Check your internet connection
+- Make sure Node.js v18+ is installed (required by `mcp-remote`): `node --version`
+- If `mcp-remote` fails to install, try: `npm install -g mcp-remote`
 
 ### Local Server Issues
 
@@ -157,10 +160,31 @@ After configuration:
 - Check the path in your config is correct
 - Look at logs in Claude Desktop/Code settings
 
+## Testing with MCP Inspector
+
+You can test the MCP server using the official MCP Inspector:
+
+```bash
+# Install dependencies
+npm install
+
+# Start the HTTP MCP server (for testing remote mode)
+npm run http-mcp:start
+
+# Open MCP Inspector
+npm run http-mcp:inspect
+```
+
+In the Inspector:
+1. Select **Transport Type**: "Streamable HTTP"
+2. Select **Connection Method**: "via proxy"
+3. Enter **URL**: `http://localhost:3000/mcp` (local) or `https://mcp.ahaan-thai.de/mcp` (remote)
+4. Click **Connect**
+
 ## More Information
 
 - [Main README](./README.md) - Project overview
-- [REST API Documentation](./README-REST-API.md) - Direct API access
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Deployment guide
 - [MCP Documentation](https://modelcontextprotocol.io) - Learn more about MCP
 
 ## Support
