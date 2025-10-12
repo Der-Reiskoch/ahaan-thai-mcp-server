@@ -20,11 +20,20 @@
     "start:book-info": "node book-info-server.js",
     "start:dictionary": "node dictionary-server.js",
     "start:library": "node library-server.js",
-    "start:encyclopedia": "node encyclopedia-server.js"
+    "start:encyclopedia": "node encyclopedia-server.js",
+    "start:rest": "node src/index.js",
+    "dev:rest": "node --watch src/index.js",
+    "build:rest": "esbuild src/index.js --bundle --platform=node --format=esm --outfile=dist/index.js --external:express --external:cors --external:node-fetch",
+    "test:rest": "node test-api.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.5.0",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.0"
   },
   "keywords": [
     "mcp",

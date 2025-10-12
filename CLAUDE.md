@@ -4,19 +4,36 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This project contains three MCP (Model Context Protocol) servers that provide access to Thai food-related APIs from ahaan-thai.de:
+This project provides **dual-mode access** to Thai food-related APIs from ahaan-thai.de:
+
+### MCP Servers (Local Usage via stdio)
+
+Four MCP (Model Context Protocol) servers for local usage:
 
 1. **Dictionary Server** (`dictionary-server.js`): Thai food dictionary with translations in Thai, English, and German
 2. **Book Info Server** (`book-info-server.js`): Thai cookbook metadata (author, title, description, ISBN, etc.)
 3. **Library Server** (`library-server.js`): Thai cookbook recipes and content
+4. **Encyclopedia Server** (`encyclopedia-server.js`): Thai food encyclopedia with dishes, ingredients, and cooking methods
 
-Each server follows the same architectural pattern:
+### REST API (Remote Usage via HTTP)
 
-- Uses `@modelcontextprotocol/sdk` for MCP protocol implementation
-- Implements caching with 5-minute TTL for API responses
-- Provides debug logging functions (`logDebug`, `logError`, `logInfo`)
-- Uses `node-fetch` for external API calls
-- Connects to `https://ahaan-thai.de/api/` endpoints
+Single REST API server (`src/index.js`) that exposes all MCP functionality via HTTP endpoints for remote access.
+
+### Shared Business Logic
+
+All business logic is shared between MCP servers and REST API via `src/lib/*`:
+
+- `src/lib/cache.js`: 5-minute TTL caching
+- `src/lib/logger.js`: Debug logging (`logDebug`, `logError`, `logInfo`)
+- `src/lib/dictionary-logic.js`: Dictionary business logic
+- `src/lib/book-info-logic.js`: Book info business logic
+- `src/lib/library-logic.js`: Library business logic
+- `src/lib/encyclopedia-logic.js`: Encyclopedia business logic
+
+**Benefits:**
+- No code duplication
+- Single source of truth for business logic
+- Both local (MCP) and remote (REST) modes available
 
 ### Key Constants and URLs
 
@@ -28,23 +45,26 @@ Each server follows the same architectural pattern:
 
 ## Development Commands
 
-### Server Management
+### MCP Server Management (Local)
 
 ```bash
-# Start servers directly
+# Start MCP servers directly
 npm run start:dictionary
 npm run start:book-info
 npm run start:library
+npm run start:encyclopedia
 
 # Start with debugging
 npm run dev:dictionary
 npm run dev:book-info
 npm run dev:library
+npm run dev:encyclopedia
 
 # Start via bash scripts (ensures correct Node.js version)
 ./run-dictionary-server.sh
 ./run-book-info-server.sh
 ./run-library-server.sh
+./run-encyclopedia-server.sh
 ```
 
 ### Server Inspection
@@ -54,6 +74,23 @@ npm run dev:library
 npm run inspect:dictionary
 npm run inspect:book-info
 npm run inspect:library
+npm run inspect:encyclopedia
+```
+
+### REST API Management (Remote)
+
+```bash
+# Start REST API server
+npm run start:rest
+
+# Start with auto-reload
+npm run dev:rest
+
+# Test REST API
+npm run test:rest
+
+# Build for deployment
+npm run build:rest
 ```
 
 ### Prerequisites
@@ -63,13 +100,46 @@ npm run inspect:library
 
 ## Project Structure
 
-- `dictionary-server.js`: Main dictionary server with category filtering
-- `book-info-server.js`: Book metadata server with Amazon link generation
-- `library-server.js`: Recipe library server with URL processing
-- `run-*.sh`: Bash scripts that ensure correct Node version via nvm
-- `package.json`: Contains all npm scripts and dependencies
+```
+├── src/                          # REST API (Development)
+│   ├── index.js                  # REST API Server
+│   └── lib/                      # Shared Business Logic
+│       ├── cache.js              # 5-minute TTL cache
+│       ├── logger.js             # Debug logging
+│       ├── dictionary-logic.js   # Dictionary business logic
+│       ├── book-info-logic.js    # Book info business logic
+│       ├── library-logic.js      # Library business logic
+│       └── encyclopedia-logic.js # Encyclopedia business logic
+│
+├── dist/                         # Production Build (for deployment)
+│   ├── index.js                  # Bundled REST API (28.8kb)
+│   └── package.json              # Production dependencies only
+│
+├── dictionary-server.js          # MCP Server (uses src/lib/)
+├── book-info-server.js           # MCP Server (uses src/lib/)
+├── library-server.js             # MCP Server (uses src/lib/)
+├── encyclopedia-server.js        # MCP Server (uses src/lib/)
+│
+├── run-*.sh                      # Startup scripts (ensure Node version)
+├── test-api.js                   # REST API test suite
+│
+├── README.md                     # Main documentation
+├── README-REST-API.md            # REST API documentation
+├── DEPLOYMENT.md                 # Deployment guide
+└── CLAUDE.md                     # This file
+```
+
+### Key Files
+
+- **MCP Servers**: `*-server.js` files in root - use shared logic from `src/lib/`
+- **REST API**: `src/index.js` - uses same shared logic
+- **Shared Logic**: `src/lib/*` - single source of truth for all business logic
+- **Build Output**: `dist/index.js` - bundled for Netcup deployment (28.8kb)
+- **Tests**: `test-api.js` - comprehensive REST API test suite
 
 ## Configuration
+
+### Local MCP Servers
 
 MCP servers are configured in AI tools (like Claude Desktop) using the bash script paths:
 
@@ -79,7 +149,23 @@ MCP servers are configured in AI tools (like Claude Desktop) using the bash scri
     "thai-food-dictionary": {
       "command": "bash",
       "args": ["<PATH>/run-dictionary-server.sh"]
+    },
+    "thai-cook-book-info": {
+      "command": "bash",
+      "args": ["<PATH>/run-book-info-server.sh"]
+    },
+    "thai-cook-book-library": {
+      "command": "bash",
+      "args": ["<PATH>/run-library-server.sh"]
+    },
+    "thai-food-encyclopedia": {
+      "command": "bash",
+      "args": ["<PATH>/run-encyclopedia-server.sh"]
     }
   }
 }
 ```
+
+### Remote REST API
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for deployment instructions to Netcup or other hosting providers.

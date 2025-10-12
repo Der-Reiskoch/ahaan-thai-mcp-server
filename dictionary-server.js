@@ -10,107 +10,8 @@ import {
   McpError,
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { logDebug, logError, logInfo } from "./lib/logger.js";
-
-const THAI_FOOD_DICTIONARY_API_URL =
-  "https://www.ahaan-thai.de/api/thai-food-dictionary.json";
-
-// Thai Food Dictionary Data and Categories Cache
-let thaiFoodData = null;
-let availableCategories = [];
-
-// Fetch the Thai Food Dictionary data
-async function fetchThaiFoodData() {
-  if (!thaiFoodData) {
-    try {
-      logDebug("Fetching Thai Food Dictionary data from API...");
-      // Use dynamic import for fetch in Node.js
-      const fetch = (await import("node-fetch")).default;
-      logDebug("Node-fetch imported successfully");
-
-      const response = await fetch(THAI_FOOD_DICTIONARY_API_URL);
-      logDebug(
-        `API response status: ${response.status} ${response.statusText}`
-      );
-
-      if (!response.ok) {
-        logError(`HTTP ${response.status}: ${response.statusText}`);
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      thaiFoodData = await response.json();
-      
-      // Dynamically extract available categories
-      availableCategories = Object.keys(thaiFoodData);
-      
-      const totalItems = availableCategories.reduce(
-        (sum, cat) => sum + Object.keys(thaiFoodData[cat]).length,
-        0
-      );
-
-      logInfo(`Thai Food Dictionary loaded successfully:`);
-      logInfo(`- Categories: ${availableCategories.length}`);
-      logInfo(`- Total items: ${totalItems}`);
-      logDebug("Available categories:", availableCategories);
-    } catch (err) {
-      logError("Failed to fetch Thai Food Dictionary data:", err.message);
-      logError("Stack trace:", err.stack);
-      throw new McpError(
-        ErrorCode.InternalError,
-        `Failed to fetch Thai Food Dictionary data: ${err.message}`
-      );
-    }
-  } else {
-    logDebug("Using cached Thai Food Dictionary data");
-  }
-  return thaiFoodData;
-}
-
-// Helper function to get available categories
-async function getAvailableCategories() {
-  if (availableCategories.length === 0) {
-    await fetchThaiFoodData();
-  }
-  return availableCategories;
-}
-
-// Helper function to search in categories
-function searchInCategory(data, category, searchTerm) {
-  logDebug(`Searching in category "${category}" for term "${searchTerm}"`);
-
-  if (!data[category]) {
-    logDebug(`Category "${category}" not found in data`);
-    return [];
-  }
-
-  const results = [];
-  const lowerSearchTerm = searchTerm.toLowerCase();
-  const categoryItems = Object.keys(data[category]).length;
-
-  logDebug(`Category "${category}" has ${categoryItems} items`);
-
-  for (const [thai, details] of Object.entries(data[category])) {
-    const matches = [
-      thai.includes(lowerSearchTerm),
-      details.meaning_de.toLowerCase().includes(lowerSearchTerm),
-      details.meaning_en.toLowerCase().includes(lowerSearchTerm),
-      details.trans_de.toLowerCase().includes(lowerSearchTerm),
-      details.trans_en.toLowerCase().includes(lowerSearchTerm),
-    ];
-
-    if (matches.some((match) => match)) {
-      results.push({
-        category,
-        thai,
-        ...details,
-      });
-      logDebug(`Match found: ${thai} (${details.meaning_de})`);
-    }
-  }
-
-  logDebug(`Found ${results.length} results in category "${category}"`);
-  return results;
-}
+import { logDebug, logError, logInfo } from "./src/lib/logger.js";
+import * as dictionary from "./src/lib/dictionary-logic.js";
 
 // Create server
 logDebug("Creating MCP Server instance...");
@@ -131,11 +32,11 @@ logInfo("MCP Server instance created successfully");
 // List available tools - now with dynamic categories
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   logDebug("Handling ListTools request");
-  
+
   // Get available categories dynamically
-  const categories = await getAvailableCategories();
+  const categories = await dictionary.getCategories();
   logDebug(`Building tools with ${categories.length} dynamic categories`);
-  
+
   const tools = [
     {
       name: "search_thai_food",
@@ -152,7 +53,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           category: {
             type: "string",
             description: "Optional: specific category to search in",
-            enum: categories, // Dynamically populated
+            enum: categories,
           },
         },
         required: ["query"],
@@ -168,7 +69,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           category: {
             type: "string",
             description: "Category name",
-            enum: categories, // Dynamically populated
+            enum: categories,
           },
         },
         required: ["category"],
@@ -230,11 +131,10 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   logDebug(`Handling ReadResource request for URI: ${uri}`);
 
   try {
-    const data = await fetchThaiFoodData();
-
     switch (uri) {
       case "thai-food://dictionary/full":
         logDebug("Returning full dictionary data");
+        const data = await dictionary.fetchDictionary();
         return {
           contents: [
             {
@@ -247,12 +147,7 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 
       case "thai-food://categories/list":
         logDebug("Generating categories list");
-        const categories = Object.keys(data).map((key) => ({
-          key,
-          name: key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
-          count: Object.keys(data[key]).length,
-        }));
-
+        const categories = await dictionary.getCategoryList();
         logDebug(`Generated list of ${categories.length} categories`);
         return {
           contents: [
@@ -283,36 +178,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   logDebug(`Handling tool call: ${name}`, args);
 
   try {
-    const data = await fetchThaiFoodData();
-
     switch (name) {
       case "search_thai_food": {
         const { query, category } = args;
         logDebug(
           `Search request - Query: "${query}", Category: ${category || "all"}`
         );
-        
-        // Validate category if provided
-        if (category && !availableCategories.includes(category)) {
-          logError(`Invalid category "${category}"`);
-          throw new McpError(
-            ErrorCode.InvalidRequest,
-            `Category "${category}" not found. Available categories: ${availableCategories.join(", ")}`
-          );
-        }
-        
-        let results = [];
 
-        if (category) {
-          // Search in specific category
-          results = searchInCategory(data, category, query);
-        } else {
-          // Search in all categories
-          logDebug(`Searching across ${availableCategories.length} categories`);
-          for (const cat of availableCategories) {
-            results.push(...searchInCategory(data, cat, query));
-          }
-        }
+        const results = await dictionary.searchDictionary(query, category);
 
         logInfo(`Search completed: ${results.length} results for "${query}"`);
         return {
@@ -343,19 +216,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const { category } = args;
         logDebug(`Get category request: ${category}`);
 
-        // Validate category
-        if (!availableCategories.includes(category)) {
-          logError(`Category "${category}" not found`);
-          throw new McpError(
-            ErrorCode.InvalidRequest,
-            `Category "${category}" not found. Available categories: ${availableCategories.join(", ")}`
-          );
-        }
-
-        const items = Object.entries(data[category]).map(([thai, details]) => ({
-          thai,
-          ...details,
-        }));
+        const items = await dictionary.getCategory(category);
 
         logInfo(`Category "${category}" retrieved: ${items.length} items`);
         return {
@@ -378,20 +239,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "get_categories": {
         logDebug("Get categories request");
-        const categories = availableCategories.map((key) => {
-          const count = Object.keys(data[key]).length;
-          const displayName = key
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (l) => l.toUpperCase());
-          return `• ${displayName} (${count} items)`;
-        });
+        const categories = await dictionary.getCategoryList();
+
+        const formattedCategories = categories.map((cat) =>
+          `• ${cat.name} (${cat.count} items)`
+        );
 
         logInfo(`Categories list generated: ${categories.length} categories`);
         return {
           content: [
             {
               type: "text",
-              text: `Available Thai Food Dictionary Categories:\n\n${categories.join(
+              text: `Available Thai Food Dictionary Categories:\n\n${formattedCategories.join(
                 "\n"
               )}`,
             },
@@ -402,18 +261,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "translate_thai_word": {
         const { thai_word } = args;
         logDebug(`Translate request for: "${thai_word}"`);
-        let found = null;
-        let foundCategory = null;
 
-        // Search for exact Thai word match across all available categories
-        for (const category of availableCategories) {
-          if (data[category][thai_word]) {
-            found = data[category][thai_word];
-            foundCategory = category;
-            logDebug(`Found exact match in category: ${category}`);
-            break;
-          }
-        }
+        const found = await dictionary.translateWord(thai_word);
 
         if (!found) {
           logDebug(`No exact match found for: "${thai_word}"`);
@@ -428,7 +277,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         logInfo(
-          `Translation found for "${thai_word}" in category "${foundCategory}"`
+          `Translation found for "${thai_word}" in category "${found.category}"`
         );
         return {
           content: [
@@ -436,7 +285,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               type: "text",
               text:
                 `Translation for "${thai_word}":\n\n` +
-                `🏷️ Category: ${foundCategory}\n` +
+                `🏷️ Category: ${found.category}\n` +
                 `🇹🇭 Thai: ${thai_word}\n` +
                 `🇩🇪 German: ${found.meaning_de}\n` +
                 `🇬🇧 English: ${found.meaning_en}\n` +
@@ -474,9 +323,10 @@ async function main() {
 
     // Try to preload the data and categories
     try {
-      await fetchThaiFoodData();
-      logInfo(`Thai Food Dictionary data preloaded successfully with ${availableCategories.length} categories`);
-      logDebug("Available categories:", availableCategories);
+      await dictionary.fetchDictionary();
+      const categories = await dictionary.getCategories();
+      logInfo(`Thai Food Dictionary data preloaded successfully with ${categories.length} categories`);
+      logDebug("Available categories:", categories);
     } catch (err) {
       logError("Failed to preload Thai Food Dictionary data:", err.message);
       logInfo("Data will be loaded on first request");
