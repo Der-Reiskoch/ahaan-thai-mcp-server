@@ -9,22 +9,34 @@
   },
   "scripts": {
     "claude": "npx @anthropic-ai/claude-code",
-    "dev:book-info": "node --inspect book-info-server.js",
-    "dev:dictionary": "node --inspect dictionary-server.js",
-    "dev:library": "node --inspect library-server.js",
-    "dev:encyclopedia": "node --inspect encyclopedia-server.js",
-    "inspect:book-info": "npx @modelcontextprotocol/inspector bash ./run-book-info-server.sh",
-    "inspect:dictionary": "npx @modelcontextprotocol/inspector bash ./run-dictionary-server.sh",
-    "inspect:library": "npx @modelcontextprotocol/inspector bash ./run-library-server.sh",
-    "inspect:encyclopedia": "npx @modelcontextprotocol/inspector bash ./run-encyclopedia-server.sh",
-    "start:book-info": "node book-info-server.js",
-    "start:dictionary": "node dictionary-server.js",
-    "start:library": "node library-server.js",
-    "start:encyclopedia": "node encyclopedia-server.js"
+    "stdio:book-info:start": "node book-info-server.js",
+    "stdio:book-info:dev": "node --inspect book-info-server.js",
+    "stdio:book-info:inspect": "npx @modelcontextprotocol/inspector bash ./run-book-info-server.sh",
+    "stdio:dictionary:start": "node dictionary-server.js",
+    "stdio:dictionary:dev": "node --inspect dictionary-server.js",
+    "stdio:dictionary:inspect": "npx @modelcontextprotocol/inspector bash ./run-dictionary-server.sh",
+    "stdio:library:start": "node library-server.js",
+    "stdio:library:dev": "node --inspect library-server.js",
+    "stdio:library:inspect": "npx @modelcontextprotocol/inspector bash ./run-library-server.sh",
+    "stdio:encyclopedia:start": "node encyclopedia-server.js",
+    "stdio:encyclopedia:dev": "node --inspect encyclopedia-server.js",
+    "stdio:encyclopedia:inspect": "npx @modelcontextprotocol/inspector bash ./run-encyclopedia-server.sh",
+    "http-mcp:start": "node src/index.js",
+    "http-mcp:dev": "node --watch src/index.js",
+    "http-mcp:build": "mkdir -p dist && esbuild src/index.js --bundle --platform=node --format=cjs --outfile=dist/index.js --external:express --external:cors --external:node-fetch --external:zod --external:@modelcontextprotocol/sdk && node build-dist-package.js",
+    "http-mcp:inspect": "npx @modelcontextprotocol/inspector",
+    "http-mcp:bundle:pack": "cd mcpb && mcpb pack . ahaan-thai.mcpb"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^0.5.0",
-    "node-fetch": "^3.3.2"
+    "@modelcontextprotocol/sdk": "^1.20.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.2",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@anthropic-ai/mcpb": "^1.1.1",
+    "esbuild": "^0.19.0"
   },
   "keywords": [
     "mcp",

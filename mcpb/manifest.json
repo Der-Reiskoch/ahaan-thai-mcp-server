@@ -1,0 +1,25 @@
+{
+  "manifest_version": "0.2",
+  "name": "ahaan-thai",
+  "display_name": "Ahaan Thai MCP Server",
+  "version": "1.0.0",
+  "description": "Thai food dictionary, cookbooks, recipes, and encyclopedia with 26 tools",
+  "author": {
+    "name": "Der Reiskoch",
+    "url": "https://ahaan-thai.de"
+  },
+  "homepage": "https://ahaan-thai.de",
+  "license": "MIT",
+  "icon": "icon.png",
+  "server": {
+    "type": "node",
+    "entry_point": "node_modules/mcp-remote/dist/proxy.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/node_modules/mcp-remote/dist/proxy.js",
+        "https://mcp.ahaan-thai.de/mcp"
+      ]
+    }
+  }
+}
