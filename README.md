@@ -11,7 +11,19 @@ A collection of MCP Servers and REST API for the ahaan-thai.de APIs
 
 ## Quick Start
 
-### Remote Access (Recommended)
+### One-Click Install (Easiest)
+
+Install the `.mcpb` bundle for Claude Desktop - drag and drop installation!
+
+Build the bundle:
+```bash
+npm install
+npm run http-mcp:bundle:pack
+```
+
+This creates `mcpb/ahaan-thai.mcpb` (1.4MB). Simply drag the `.mcpb` file into Claude Desktop to install. No configuration needed!
+
+### Remote Access (Using mcp-remote)
 
 Use the hosted MCP server at `https://mcp.ahaan-thai.de/mcp` - no local setup required!
 
@@ -120,9 +132,19 @@ npm run inspect:encyclopedia
 
 ## Usage with Claude Desktop
 
-### Remote Access (Recommended)
+### Option 1: MCPB Bundle (Easiest - Recommended)
 
-Use the hosted HTTP MCP server - no local setup required!
+Install the `.mcpb` bundle:
+
+1. Build: `npm run http-mcp:bundle:pack`
+2. Drag and drop `mcpb/ahaan-thai.mcpb` into Claude Desktop
+3. Restart Claude Desktop
+
+That's it! No configuration needed.
+
+### Option 2: Using mcp-remote
+
+Use the hosted HTTP MCP server via `mcp-remote`:
 
 For macOS, edit: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
@@ -140,9 +162,9 @@ For macOS, edit: `~/Library/Application Support/Claude/claude_desktop_config.jso
 }
 ```
 
-### Local Stdio Servers
+### Option 3: Local Stdio Servers
 
-Or run the MCP servers locally:
+Run the MCP servers locally (for development):
 
 ```json
 {
@@ -185,6 +207,13 @@ See [MCP-CLIENT-SETUP.md](./MCP-CLIENT-SETUP.md) for detailed setup instructions
 ├── dist/                         # Production Build
 │   ├── index.js                  # Bundled HTTP MCP Server (37kb)
 │   └── package.json              # Auto-generated
+│
+├── mcpb/                         # Claude Desktop Extension Bundle
+│   ├── manifest.json             # Bundle configuration
+│   ├── package.json              # Bundle dependencies
+│   ├── icon.png                  # Extension icon
+│   ├── node_modules/             # Bundled dependencies (mcp-remote)
+│   └── ahaan-thai.mcpb           # Pre-built bundle (1.4MB)
 │
 ├── dictionary-server.js          # Stdio MCP Server (uses src/lib/)
 ├── book-info-server.js           # Stdio MCP Server (uses src/lib/)
@@ -238,6 +267,15 @@ npm run http-mcp:build
 # Open MCP Inspector
 npm run http-mcp:inspect
 ```
+
+### MCPB Bundle
+
+```bash
+# Build the .mcpb bundle
+npm run http-mcp:bundle:pack
+```
+
+This creates `mcpb/ahaan-thai.mcpb` which can be installed in Claude Desktop.
 
 ## Development
 

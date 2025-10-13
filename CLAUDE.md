@@ -87,6 +87,9 @@ npm run http-mcp:build
 
 # Open MCP Inspector
 npm run http-mcp:inspect
+
+# Build MCPB bundle for Claude Desktop
+npm run http-mcp:bundle:pack
 ```
 
 ### Prerequisites
@@ -110,6 +113,13 @@ npm run http-mcp:inspect
 ├── dist/                         # Production Build (for deployment)
 │   ├── index.js                  # Bundled HTTP MCP Server (37kb)
 │   └── package.json              # Auto-generated
+│
+├── mcpb/                         # Claude Desktop Extension Bundle
+│   ├── manifest.json             # Bundle configuration
+│   ├── package.json              # Bundle dependencies
+│   ├── icon.png                  # Extension icon (32x32)
+│   ├── node_modules/             # Bundled dependencies (mcp-remote)
+│   └── ahaan-thai.mcpb           # Pre-built bundle (1.4MB)
 │
 ├── dictionary-server.js          # Stdio MCP Server (uses src/lib/)
 ├── book-info-server.js           # Stdio MCP Server (uses src/lib/)

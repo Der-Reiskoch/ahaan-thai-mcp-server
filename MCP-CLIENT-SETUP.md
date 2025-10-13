@@ -6,9 +6,32 @@ This guide shows you how to connect to the Ahaan Thai MCP Server from AI tools l
 
 The Model Context Protocol (MCP) allows AI assistants to access external data sources and tools. The Ahaan Thai MCP Server provides access to Thai food dictionaries, cookbooks, recipes, and encyclopedia data through **26 tools**.
 
-## Option 1: Remote Access (Recommended) ⭐
+## Option 1: MCPB Bundle (Easiest) ⭐
 
-Use the hosted HTTP MCP server at `https://mcp.ahaan-thai.de/mcp` - no local setup required!
+Install the Claude Desktop Extension - drag and drop installation!
+
+### Installation Steps
+
+1. Build the bundle:
+   ```bash
+   npm install
+   npm run http-mcp:bundle:pack
+   ```
+2. Open Claude Desktop
+3. Drag and drop `mcpb/ahaan-thai.mcpb` into Claude Desktop
+4. Restart Claude Desktop
+
+That's it! The extension will automatically connect to the remote server at `https://mcp.ahaan-thai.de/mcp`.
+
+**Benefits:**
+- No configuration required
+- One-click installation
+- Automatic updates when you reinstall
+- Includes all dependencies
+
+## Option 2: Remote Access (Using mcp-remote)
+
+Use the hosted HTTP MCP server at `https://mcp.ahaan-thai.de/mcp` via `mcp-remote`.
 
 ### Claude Desktop
 
@@ -54,7 +77,7 @@ Add this to your Claude Code config file:
 }
 ```
 
-## Option 2: Local Stdio Servers
+## Option 3: Local Stdio Servers
 
 Run the MCP servers locally for offline access or development.
 

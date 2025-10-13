@@ -24,7 +24,8 @@
     "http-mcp:start": "node src/index.js",
     "http-mcp:dev": "node --watch src/index.js",
     "http-mcp:build": "mkdir -p dist && esbuild src/index.js --bundle --platform=node --format=cjs --outfile=dist/index.js --external:express --external:cors --external:node-fetch --external:zod --external:@modelcontextprotocol/sdk && node build-dist-package.js",
-    "http-mcp:inspect": "npx @modelcontextprotocol/inspector"
+    "http-mcp:inspect": "npx @modelcontextprotocol/inspector",
+    "http-mcp:bundle:pack": "cd mcpb && mcpb pack . ahaan-thai.mcpb"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.20.0",
@@ -34,6 +35,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@anthropic-ai/mcpb": "^1.1.1",
     "esbuild": "^0.19.0"
   },
   "keywords": [

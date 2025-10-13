@@ -1,0 +1,8 @@
+{
+  "name": "ahaan-thai-mcpb",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "mcp-remote": "^0.1.29"
+  }
+}
