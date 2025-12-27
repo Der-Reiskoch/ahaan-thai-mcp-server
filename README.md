@@ -6,7 +6,7 @@ A collection of MCP Servers and REST API for the ahaan-thai.de APIs
 
 - **Dual-Mode**: Available as both local MCP servers (stdio) and remote HTTP MCP server
 - **Shared Logic**: Business logic shared between all implementations
-- **Four APIs**: Dictionary, Book Info, Library, and Encyclopedia
+- **Three APIs**: Dictionary, Library, and Encyclopedia
 - **26 Tools**: Access to all functionality via MCP protocol
 
 ## Quick Start
@@ -35,7 +35,7 @@ Clone this repo and run locally for development or offline access.
 
 ## MCP Servers
 
-Currently we have four servers for the APIs provided by ahaan-thai.de:
+Currently we have three servers for the APIs provided by ahaan-thai.de:
 
 ### Dictionary Server
 
@@ -43,15 +43,9 @@ A MCP Server for the Thai food dictionary. It provides translations of many food
 
 - `thai-food-dictionary-server` (dictionary-server.js)
 
-### Book Info Server
-
-A MCP Server for the Thai cook book library which provides information like author, title, description, ISBN, language, level, publisher, year, etc.
-
-- `thai-cook-book-info-server` (book-info-server.js)
-
 ### Library Server
 
-A MCP Server for the Thai cook book library which provides the recipes that are contained in the books.
+A MCP Server for the Thai cook book library which provides both cookbook metadata (author, title, ISBN, etc.) and recipes.
 
 - `thai-cook-book-library-server` (library-server.js)
 
@@ -95,7 +89,6 @@ npm install
 We use bash scripts to start the servers to ensure the correct node version is used:
 
 ```bash
-chmod +x run-book-info-server.sh
 chmod +x run-dictionary-server.sh
 chmod +x run-library-server.sh
 chmod +x run-encyclopedia-server.sh
@@ -105,7 +98,6 @@ chmod +x run-encyclopedia-server.sh
 
 ```bash
 ./run-dictionary-server.sh
-./run-book-info-server.sh
 ./run-library-server.sh
 ./run-encyclopedia-server.sh
 ```
@@ -113,10 +105,9 @@ chmod +x run-encyclopedia-server.sh
 Or use npm scripts:
 
 ```bash
-npm run start:dictionary
-npm run start:book-info
-npm run start:library
-npm run start:encyclopedia
+npm run stdio:dictionary:start
+npm run stdio:library:start
+npm run stdio:encyclopedia:start
 ```
 
 ### 4. Inspect the servers
@@ -124,10 +115,9 @@ npm run start:encyclopedia
 To inspect the servers we use the inspector from `modelcontextprotocol`:
 
 ```bash
-npm run inspect:dictionary
-npm run inspect:book-info
-npm run inspect:library
-npm run inspect:encyclopedia
+npm run stdio:dictionary:inspect
+npm run stdio:library:inspect
+npm run stdio:encyclopedia:inspect
 ```
 
 ## Usage with Claude Desktop
@@ -173,10 +163,6 @@ Run the MCP servers locally (for development):
       "command": "bash",
       "args": ["<PATH_TO_PROJECT>/run-dictionary-server.sh"]
     },
-    "thai-cook-book-info": {
-      "command": "bash",
-      "args": ["<PATH_TO_PROJECT>/run-book-info-server.sh"]
-    },
     "thai-cook-book-library": {
       "command": "bash",
       "args": ["<PATH_TO_PROJECT>/run-library-server.sh"]
@@ -200,8 +186,7 @@ See [MCP-CLIENT-SETUP.md](./MCP-CLIENT-SETUP.md) for detailed setup instructions
 │       ├── cache.js
 │       ├── logger.js
 │       ├── dictionary-logic.js
-│       ├── book-info-logic.js
-│       ├── library-logic.js
+│       ├── library-logic.js      # Includes book info + recipes
 │       └── encyclopedia-logic.js
 │
 ├── dist/                         # Production Build
@@ -216,7 +201,6 @@ See [MCP-CLIENT-SETUP.md](./MCP-CLIENT-SETUP.md) for detailed setup instructions
 │   └── ahaan-thai.mcpb           # Pre-built bundle (1.4MB)
 │
 ├── dictionary-server.js          # Stdio MCP Server (uses src/lib/)
-├── book-info-server.js           # Stdio MCP Server (uses src/lib/)
 ├── library-server.js             # Stdio MCP Server (uses src/lib/)
 ├── encyclopedia-server.js        # Stdio MCP Server (uses src/lib/)
 │
@@ -235,19 +219,16 @@ See [MCP-CLIENT-SETUP.md](./MCP-CLIENT-SETUP.md) for detailed setup instructions
 ```bash
 # Start servers
 npm run stdio:dictionary:start
-npm run stdio:book-info:start
 npm run stdio:library:start
 npm run stdio:encyclopedia:start
 
 # Start with debugging
 npm run stdio:dictionary:dev
-npm run stdio:book-info:dev
 npm run stdio:library:dev
 npm run stdio:encyclopedia:dev
 
 # Inspect servers
 npm run stdio:dictionary:inspect
-npm run stdio:book-info:inspect
 npm run stdio:library:inspect
 npm run stdio:encyclopedia:inspect
 ```

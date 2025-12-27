@@ -13,10 +13,12 @@ Install the Claude Desktop Extension - drag and drop installation!
 ### Installation Steps
 
 1. Build the bundle:
+
    ```bash
    npm install
    npm run http-mcp:bundle:pack
    ```
+
 2. Open Claude Desktop
 3. Drag and drop `mcpb/ahaan-thai.mcpb` into Claude Desktop
 4. Restart Claude Desktop
@@ -24,6 +26,7 @@ Install the Claude Desktop Extension - drag and drop installation!
 That's it! The extension will automatically connect to the remote server at `https://mcp.ahaan-thai.de/mcp`.
 
 **Benefits:**
+
 - No configuration required
 - One-click installation
 - Automatic updates when you reinstall
@@ -45,10 +48,7 @@ Add this to your Claude Desktop config file (`claude_desktop_config.json`):
   "mcpServers": {
     "ahaan-thai": {
       "command": "npx",
-      "args": [
-        "mcp-remote",
-        "https://mcp.ahaan-thai.de/mcp"
-      ]
+      "args": ["mcp-remote", "https://mcp.ahaan-thai.de/mcp"]
     }
   }
 }
@@ -68,10 +68,7 @@ Add this to your Claude Code config file:
   "mcpServers": {
     "ahaan-thai": {
       "command": "npx",
-      "args": [
-        "mcp-remote",
-        "https://mcp.ahaan-thai.de/mcp"
-      ]
+      "args": ["mcp-remote", "https://mcp.ahaan-thai.de/mcp"]
     }
   }
 }
@@ -96,10 +93,6 @@ Add one or more servers to your config:
     "thai-food-dictionary": {
       "command": "bash",
       "args": ["/path/to/ahaan-thai-mcp-server/run-dictionary-server.sh"]
-    },
-    "thai-cook-book-info": {
-      "command": "bash",
-      "args": ["/path/to/ahaan-thai-mcp-server/run-book-info-server.sh"]
     },
     "thai-cook-book-library": {
       "command": "bash",
@@ -130,23 +123,26 @@ Once configured, you'll have access to these tools:
 - `translate_thai_word` - Translate Thai words
 - `list_dictionary_categories` - List all dictionary categories
 
-### Book Info Tools (6)
+### Library Tools (13)
 
-- `list_cookbooks` - List all Thai cookbooks
-- `search_cookbooks` - Search cookbooks by criteria
-- `get_cookbook_by_isbn` - Get book details by ISBN
-- `get_cookbooks_by_author` - Get books by author name
-- `get_cookbooks_by_language` - Filter books by language
-- `get_cookbook_statistics` - Get book collection statistics
+**Book Info:**
 
-### Library Tools (6)
+- `list_books` - List all Thai cookbook editions (bilingual)
+- `get_book_info` - Get bilingual book info for a cookbook
+- `search_books` - Search cookbook editions by criteria
+- `get_book_by_isbn` - Get book details by ISBN
+- `get_books_by_author` - Get books by author name
+- `get_books_by_language` - Filter books by language
+- `get_book_statistics` - Get book collection statistics
 
-- `list_library_cookbooks` - List all cookbooks with recipes
+**Recipes:**
+
+- `list_cookbooks` - List all cookbooks with recipe counts
 - `get_cookbook_recipes` - Get all recipes from a cookbook
 - `search_recipes` - Search recipes by query, region, or cookbook
-- `get_recipe` - Get a specific recipe
+- `get_recipe_by_key` - Get a specific recipe by key
 - `get_recipes_by_region` - Get recipes from a Thai region
-- `get_library_statistics` - Get recipe statistics
+- `get_cookbook_stats` - Get recipe statistics
 
 ### Encyclopedia Tools (6)
 
@@ -199,6 +195,7 @@ npm run http-mcp:inspect
 ```
 
 In the Inspector:
+
 1. Select **Transport Type**: "Streamable HTTP"
 2. Select **Connection Method**: "via proxy"
 3. Enter **URL**: `http://localhost:3000/mcp` (local) or `https://mcp.ahaan-thai.de/mcp` (remote)

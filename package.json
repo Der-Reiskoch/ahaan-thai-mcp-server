@@ -1,6 +1,6 @@
 {
   "name": "ahaan-thai-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP Server for APIs by ahaan-thai.de",
   "type": "module",
   "main": "dictionary-server.js",
@@ -8,10 +8,6 @@
     "ahaan-thai-mcp-server": "./dictionary-server.js"
   },
   "scripts": {
-    "claude": "npx @anthropic-ai/claude-code",
-    "stdio:book-info:start": "node book-info-server.js",
-    "stdio:book-info:dev": "node --inspect book-info-server.js",
-    "stdio:book-info:inspect": "npx @modelcontextprotocol/inspector bash ./run-book-info-server.sh",
     "stdio:dictionary:start": "node dictionary-server.js",
     "stdio:dictionary:dev": "node --inspect dictionary-server.js",
     "stdio:dictionary:inspect": "npx @modelcontextprotocol/inspector bash ./run-dictionary-server.sh",
@@ -36,7 +32,7 @@
   },
   "devDependencies": {
     "@anthropic-ai/mcpb": "^1.1.1",
-    "esbuild": "^0.19.0"
+    "esbuild": "^0.27.2"
   },
   "keywords": [
     "mcp",
